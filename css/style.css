@@ -1,0 +1,341 @@
+:root{
+    --bg: #eee;
+    --sec-bg: #ccc;
+    --ter-bg: white;
+
+    --border: black;
+    --shadow: #0008;
+
+    --button: black;
+    --button-hover: #444;
+    --button-valid: green;
+    --button-valid-hover: #0A0;
+
+    --sec: grey;
+}
+
+*{
+    margin: 0;
+    padding: 0;
+    font-family: "Poppins", sans-serif;
+}
+
+*:focus{
+    outline: solid 2px dodgerblue;
+}
+
+h1{
+    font-size: 2em;
+}
+
+button{
+    background: var(--button);
+    color: white;
+    border: none;
+
+    padding: 10px;
+    font-size: 1em;
+
+    cursor: pointer;
+}
+
+button:hover{
+    background: var(--button-hover);
+}
+
+button.valid{
+    background: var(--button-valid);
+}
+
+button.valid:hover{
+    background: var(--button-valid-hover);
+}
+
+button.valid:active{
+    background: unset;
+}
+
+button:active{
+    background: white;
+    color: black;
+}
+
+input[type=text], textarea{
+    font-size: 16px;
+    padding: 5px;
+}
+
+body{
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+
+    background: var(--bg);
+}
+
+article{
+    padding: 10px;
+    margin: 20px;
+
+    align-self: stretch;
+}
+
+.page{
+    display: none;
+}
+
+.comment{
+    color: var(--sec);
+}
+
+.overlay{
+    background: #0008;
+    position: fixed;
+    inset: 0;
+
+    display: none;
+}
+
+.overlay.show{
+    display: grid;
+    place-items: center;
+}
+
+#parent-lightbox{
+    position: relative;
+}
+
+#lightbox{
+    min-width: 600px; max-width: 1200px;
+    min-height: 400px; max-height: 1000px;
+
+    width: 90vw;
+
+    background: var(--bg);
+    border: solid 1px var(--border);
+    box-shadow: 10px 10px 10px var(--shadow);
+
+    position: relative;
+    overflow-y: auto;
+}
+
+#container{
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: var(--bg);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#container > .title{
+    padding: 40px;
+    font-size: 40px;
+}
+
+.searchbar{
+    align-self: stretch;
+
+    padding: 10px;
+    margin: 20px;
+
+    background: var(--sec-bg);
+
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.preview-cards{
+    width: 100%;
+
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    align-content: flex-start;
+}
+
+.preview-card{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    margin: 20px;
+    width: 320px;
+
+    border: solid 1px var(--border);
+    box-shadow: 5px 5px 5px var(--shadow);
+
+    transition: 0.3s ease;
+    cursor: pointer;
+}
+
+.preview-card:hover{
+    scale: 1.1;
+}
+
+.preview-card > .image-mask{
+    width: 100%;
+    height: 150px;
+
+    overflow: hidden;
+    border-bottom: solid 1px var(--border);
+
+    display: grid;
+    place-items: center;
+}
+
+.preview-card > .image-mask > img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-card > .title{
+    padding: 5px;
+    font-size: 1.05em;
+    font-weight: bold;
+    text-align: center;
+}
+
+.etiquette{
+    color: white;
+    padding: 2px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.etiquette:hover{
+    font-weight: bold;
+}
+
+.etiquette[disabled]:not(:hover){
+    opacity: 0.3;
+}
+
+.etiquettes{
+    margin: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+}
+
+.labelbox{
+    margin-top: 24px;
+    position: relative;
+}
+
+.labelbox > label{
+    position: absolute;
+    top: 0; left: 0;
+    translate: 0 -100%;
+}
+
+.textval{
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.textval > p:nth-child(2){
+    font-style: italic;
+}
+
+.taches{
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    align-items: center;
+    gap: 15px;
+}
+
+.tache{
+    width: calc(100% - 20px);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+
+    padding: 10px;
+    border: solid 1px var(--border);
+    background: var(--ter-bg);
+
+    cursor: pointer;
+}
+
+.tache_header{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.tache .numero{
+    color: var(--sec);
+}
+
+.tache .enonce{
+    flex: 1;
+    text-wrap: wrap;
+}
+
+.tache .compteur{
+    font-style: italic;
+}
+
+.checkbox{
+    scale: 1.5;
+}
+
+.tache[finished] p.enonce{
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.tache[finished] .compteur{
+    opacity: 0.5;
+}
+
+.progressbar{
+    height: 18px;
+    border: solid 1px var(--border);
+    background: var(--ter-bg);
+}
+
+.progressbar > span{
+    display: block;
+    height: 100%;
+    background: #2C2;
+
+    transition-property: width;
+    transition: 0.2s ease;
+}
+
+.progressbar, .progressbar > span{
+    border-radius: 20px;
+}
+
+.date{
+    font-style: italic;
+    color: var(--sec);
+    font-size: 0.8em;
+}
+
+.toggleable{
+    display: none;
+}
+
+.toggled > .toggleable{
+    display: block;
+}
+
+.toggled > :not(.toggleable){
+    display: none;
+}

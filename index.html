@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/fonts.css">
+    <link rel="stylesheet" href="css/utils.css">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Project Manager</title>
+</head>
+<body>
+    
+    <div id="container">
+    </div>
+
+    <div class="page" id="searchpage">
+        <h1 class="title">Projets</h1>
+        <div class="searchbar">
+            <input type="text" placeholder="Rechercher..." style="width: 400px;">
+            <button>Rechercher</button>
+        </div>
+
+        <div class="preview-cards">
+            <div class="preview-card">
+                <div class="image-mask">
+                    <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling">
+                </div>
+                <p class="title">Création d'un moteur de rendu 3D</p>
+                <div class="etiquettes">
+                    <div class="etiquette" style="background: darkcyan;">C++</div>
+                    <div class="etiquette" style="background: darkmagenta;">OpenGL</div>
+                    <div class="etiquette" style="background: darkorange;">Maths</div>
+                </div>
+            </div>
+    
+            <div class="preview-card" onclick="navigateTo('projectpage')">
+                <div class="image-mask">
+                    <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
+                </div>
+                <p class="title">FPS Multijoueur Unity</p>
+                <div class="etiquettes">
+                    <div class="etiquette" style="background: black;">Unity</div>
+                    <div class="etiquette" style="background: green;">C#</div>
+                    <div class="etiquette" style="background: dodgerblue;">Networking</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="projectpage">
+        <h1 class="title">FPS Multijoueur Unity</h1>
+        <article class="row c bgap">
+            <div class="column sgap" style="width: 700px;">
+                <div class="row mgap">
+                    <div class="labelbox">
+                        <input type="text" id="titre-projet" style="width: 250px;" placeholder="Entrez le titre ici..." readonly>
+                        <label for="titre-projet">Titre du projet</label>
+                    </div>
+                    <div class="labelbox" style="flex: 1;">
+                        <div id="etiquettes-projet" class="etiquettes" style="justify-content: start;">
+                        </div>
+                        <label>Étiquettes</label>
+                    </div>
+                </div>
+                <div class="labelbox">
+                    <textarea id="description-projet" placeholder="Entrez la description ici..."
+                    cols="85" rows="12" readonly class="noresize"></textarea>
+                    <label for="description-projet">Description du projet</label>
+                </div> 
+                <div class="textval">
+                    <p>Création :</p>
+                    <p id="created-projet">...</p>
+                </div>
+                <div class="textval">
+                    <p>Dernière modification :</p>
+                    <p id="modified-projet">...</p>
+                </div>
+            </div>
+
+            <carousel id="project-images" style="
+             min-width: 200px;
+             max-width: 600px;
+             flex: 1;">
+                <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
+                <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling">
+            </carousel>
+        </article>
+        
+        <article class="column a">
+            <div class="row c bgap mmar fw">
+                <h2>Tâches à faire</h2>
+                <div id="progressbar" class="row sgap hide" style="width: 50%; max-width: 600px;">
+                    <div class="progressbar" style="flex: 1;">
+                        <span></span>
+                    </div>
+                    <b id="text-progressbar">...</b>
+                </div>
+            </div>
+
+            <div id="taches-projet" class="taches" style="width: 80%; max-width: 1200px;">
+                <div class="tache" finished>
+                    <div class="tache_header">
+                        <p class="numero">#1</p>
+                        <p class="enonce">Créer le projet Unity</p>
+                        <p class="compteur">2/2</p>
+                        <input type="checkbox" class="checkbox" checked>
+                    </div>
+                    <p class="date">Fini le 28 avril 2024 à 13h00</p>
+                </div>
+                <div class="tache">
+                    <div class="tache_header">
+                        <p class="numero">#2</p>
+                        <p class="enonce">Modéliser et animer les personages et ennemis</p>
+                        <p class="compteur">0/8</p>
+                        <input type="checkbox" class="checkbox">
+                    </div>
+                </div>
+                <div class="tache">
+                    <div class="tache_header">
+                        <p class="numero">#3</p>
+                        <p class="enonce">Programmer le CharacterController</p>
+                        <input type="checkbox" class="checkbox">
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <div class="floating_button hide">
+            <button id="edit-button">Modifier</button>
+            <button id="cancel-button">Annuler</button>
+            <button class="valid" id="save-button">Sauvegarder</button>
+        </div>
+    </div>
+
+    <div class="overlay">
+        <div id="parent-lightbox">
+            <div id="lightbox">
+
+                <div class="column bmar sgap">
+                    <!-- Header -->
+                    <div class="row bgap">
+                        <h2>Tâche #2</h2>
+                        <div class="row sgap">
+                            <input type="checkbox" class="checkbox" checked>
+                            <i>Fini le 28 avril 2024 à 13h00</i>
+                        </div>
+                    </div>
+                    
+                    <div class="row sa bgap wrap">
+                        <!-- Infos tâche -->
+                        <div class="column sgap">
+                            <div class="labelbox">
+                                <input type="text" id="tache_nom" placeholder="Entrez le nom ici..." readonly
+                                    style="min-width: 500px;" value="Modéliser et animer les personnages et ennemis">
+                                <label for="tache_nom">Nom de la tâche</label>
+                            </div>
+                            <div class="labelbox">
+                                <textarea name="" id="" cols="60" rows="10" class="noresize" 
+                                placeholder="Entrez la description ici..."></textarea>
+                                <label for="tache_description">Description de la tâche</label>
+                            </div>
+                            <div class="textval">
+                                <p>Création :</p>
+                                <p>25 avril 2024 à 17h10</p>
+                            </div>
+                            <div class="textval">
+                                <p>Dernière modification :</p>
+                                <p>28 avril 2024 à 10h01</p>
+                            </div>
+                        </div>
+
+                        <div class="column sgap" style="width: 500px;">
+                            <h3>Sous-tâches</h3>
+                            <div class="taches">
+                                <div class="tache">
+                                    <div class="tache_header">
+                                        <p class="numero">#2.1</p>
+                                        <p class="enonce">Modéliser le personnage</p>
+                                        <input type="checkbox" class="checkbox" checked>
+                                    </div>
+                                    <p class="date">Fait le 28 avril 2024 à 10h34</p>
+                                </div>
+                                <div class="tache">
+                                    <div class="tache_header">
+                                        <p class="numero">#2.2</p>
+                                        <p class="enonce">Texturer le personnage</p>
+                                        <input type="checkbox" class="checkbox">
+                                    </div>
+                                </div>
+                                <div class="tache">
+                                    <div class="tache_header">
+                                        <p class="numero">#2.3</p>
+                                        <p class="enonce">Animer le personnage</p>
+                                        <input type="checkbox" class="checkbox" >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js" defer></script>
+    <script src="js/carousel.js" defer></script>
+    <script src="js/data.js" defer></script>
+    <script src="js/main.js" defer></script>
+
+    <script src="js/pages/projectpage.js" defer></script>
+</body>
+</html>
