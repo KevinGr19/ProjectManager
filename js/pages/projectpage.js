@@ -1,14 +1,4 @@
-page_loads["projectpage"] = () => {
-
-    // document.querySelectorAll(".tache").forEach(t => {
-    //     t.addEventListener('click', () => showLightbox())
-    //     t.querySelector("input[type=checkbox]").addEventListener('click', e => {
-    //         e.stopPropagation()
-    //     })
-    // })
-
-    //#region Fake data
-    // Fake project
+function generateFakeProject(){
     let project = new Project()
     project.title = "FPS Multijoueur Unity"
     project.description = "Ceci est la description du projet Unity.\nUne deuxième ligne ici."
@@ -48,22 +38,35 @@ page_loads["projectpage"] = () => {
     task.createdAt = new Date(2024, 3, 26, 12, 10)
     task.modifiedAt = new Date(2024, 3, 28, 9, 5)
     task.finished = false
-    task.finishedAt = new Date(2024, 3, 28, 12, 25)
-    //#endregion
+
+    return project
+}
+
+page_loads["projectpage"] = () => {
+
+    let project = generateFakeProject()
+
+    function setupData(){
+        project = Watcher.toWatcherProxy(project)
+
+        for(let i in project.tasks){
+            project.tasks[i] = Watcher.toWatcherProxy(project.tasks[i])
+        }
+    }
 
     //#region Wiring up
-    const i_projectTitle = document.querySelector("#titre-projet")
-    const i_projectDescription = document.querySelector("#description-projet")
     const d_projectEtiquettes = document.querySelector("#etiquettes-projet")
-    const t_projectCreated = document.querySelector("#created-projet")
-    const t_projectModified = document.querySelector("#modified-projet")
-
     const d_progressbar = document.querySelector("#progressbar")
     const d_progressbarFill = d_progressbar.querySelector("span")
     const t_progressbar = document.querySelector("#text-progressbar")
-
     const d_taches = document.querySelector("#taches-projet")
-
+    
+    function loadTask(task){
+        loadLightbox("task-lightbox")
+        
+        let vm = new TaskLightboxVM(lightbox, task)
+    }
+    
     function updateProgressbar(){
         let ratio = project.getRatio()
         if(ratio === null){
@@ -76,13 +79,11 @@ page_loads["projectpage"] = () => {
             t_progressbar.innerText = d_progressbarFill.style.width = `${percentage}%`
         }
     }
-
+    
     function updateProject(){
-        i_projectTitle.value = project.title
-        i_projectDescription.value = project.description
-        t_projectCreated.innerText = dateToText(project.createdAt)
-        t_projectModified.innerText = dateToText(project.modifiedAt)
-
+        setupData()
+        let projectVM = new ProjectVM(container, project)
+        
         d_projectEtiquettes.innerHTML = ''
         if(project.tags){
             project.tags.forEach(t => d_projectEtiquettes.appendChild(t.toHTML()))
@@ -90,45 +91,35 @@ page_loads["projectpage"] = () => {
         else{
             d_projectEtiquettes.innerText = 'Aucune'
         }
-
+        
         d_taches.innerHTML = ''
         if(!project.tasks) d_taches.innerText = "Ce projet n'a aucune tâche."
         else project.tasks.forEach(t => {
-            d_taches.appendChild(t.toHTML())
+            let taskVM = new TaskVM(d_taches, t)
+            taskVM.root.addEventListener('click', () => loadTask(t))
         })
-
+        
         updateProgressbar()
     }
-
+    
     updateProject()
     //#endregion
-
+    
     //#region Floating buttons
     const floating_button = document.querySelector(".floating_button")
     const edit_button = floating_button.querySelector("#edit-button")
     const cancel_button = floating_button.querySelector("#cancel-button")
     const save_button = floating_button.querySelector("#save-button")
-
+    
     let editMode = null
-
+    
     function setEditMode(edit){
         if(edit == editMode) return
         editMode = edit
-
+        
         edit_button.classList.toggle('hide', editMode)
         cancel_button.classList.toggle('hide', !editMode)
         save_button.classList.toggle('hide', !editMode)
-
-        if(editMode){
-            i_projectTitle.removeAttribute('readonly')
-            i_projectDescription.removeAttribute('readonly')
-        }
-
-        else{
-            i_projectTitle.setAttribute('readonly', true)
-            i_projectDescription.setAttribute('readonly', true)
-            updateProject()
-        }
     }
 
     async function saveAll(){

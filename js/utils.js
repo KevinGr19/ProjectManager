@@ -59,5 +59,6 @@ let months = [
 	'septembre','octobre','novembre','décembre'
 ]
 function dateToText(date){
+	if(!date) return null
 	return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} à ${date.getHours().toString().padStart(2, '0')}h${date.getMinutes().toString().padStart(2, '0')}`
 }

@@ -53,7 +53,7 @@
             <div class="column sgap" style="width: 700px;">
                 <div class="row mgap">
                     <div class="labelbox">
-                        <input type="text" id="titre-projet" style="width: 250px;" placeholder="Entrez le titre ici..." readonly>
+                        <input type="text" id="titre-projet" style="width: 250px;" placeholder="Entrez le titre ici...">
                         <label for="titre-projet">Titre du projet</label>
                     </div>
                     <div class="labelbox" style="flex: 1;">
@@ -64,7 +64,7 @@
                 </div>
                 <div class="labelbox">
                     <textarea id="description-projet" placeholder="Entrez la description ici..."
-                    cols="85" rows="12" readonly class="noresize"></textarea>
+                    cols="85" rows="12" class="noresize"></textarea>
                     <label for="description-projet">Description du projet</label>
                 </div> 
                 <div class="textval">
@@ -135,70 +135,71 @@
     <div class="overlay">
         <div id="parent-lightbox">
             <div id="lightbox">
+            </div>
+        </div>
+    </div>
 
-                <div class="column bmar sgap">
-                    <!-- Header -->
-                    <div class="row bgap">
-                        <h2>Tâche #2</h2>
-                        <div class="row sgap">
-                            <input type="checkbox" class="checkbox" checked>
-                            <i>Fini le 28 avril 2024 à 13h00</i>
-                        </div>
+    <div class="lightbox" id="task-lightbox">
+        <div class="column bmar sgap">
+            <!-- Header -->
+            <div class="row bgap">
+                <h2 id="lb-tache-title">Tâche ...</h2>
+                <div class="row sgap">
+                    <input id="lb-tache-finished" type="checkbox" class="checkbox">
+                    <i id="lb-tache-finishedAt"></i>
+                </div>
+            </div>
+            
+            <div class="row sa bgap wrap">
+                <!-- Infos tâche -->
+                <div class="column sgap">
+                    <div class="labelbox">
+                        <input type="text" id="tache_nom" placeholder="Entrez le nom ici..."
+                            style="min-width: 500px;" value="Modéliser et animer les personnages et ennemis">
+                        <label for="tache_nom">Nom de la tâche</label>
                     </div>
-                    
-                    <div class="row sa bgap wrap">
-                        <!-- Infos tâche -->
-                        <div class="column sgap">
-                            <div class="labelbox">
-                                <input type="text" id="tache_nom" placeholder="Entrez le nom ici..." readonly
-                                    style="min-width: 500px;" value="Modéliser et animer les personnages et ennemis">
-                                <label for="tache_nom">Nom de la tâche</label>
+                    <div class="labelbox">
+                        <textarea id="tache_description" cols="60" rows="10" class="noresize"
+                        placeholder="Entrez la description ici..."></textarea>
+                        <label for="tache_description">Description de la tâche</label>
+                    </div>
+                    <div class="textval">
+                        <p>Création :</p>
+                        <p id="tache_created"></p>
+                    </div>
+                    <div class="textval">
+                        <p>Dernière modification :</p>
+                        <p id="tache_modified"></p>
+                    </div>
+                </div>
+
+                <div class="column sgap" style="width: 500px;">
+                    <h3>Sous-tâches</h3>
+                    <div class="taches">
+                        <div class="tache">
+                            <div class="tache_header">
+                                <p class="numero">#2.1</p>
+                                <p class="enonce">Modéliser le personnage</p>
+                                <input type="checkbox" class="checkbox" checked>
                             </div>
-                            <div class="labelbox">
-                                <textarea name="" id="" cols="60" rows="10" class="noresize" 
-                                placeholder="Entrez la description ici..."></textarea>
-                                <label for="tache_description">Description de la tâche</label>
-                            </div>
-                            <div class="textval">
-                                <p>Création :</p>
-                                <p>25 avril 2024 à 17h10</p>
-                            </div>
-                            <div class="textval">
-                                <p>Dernière modification :</p>
-                                <p>28 avril 2024 à 10h01</p>
+                            <p class="date">Fait le 28 avril 2024 à 10h34</p>
+                        </div>
+                        <div class="tache">
+                            <div class="tache_header">
+                                <p class="numero">#2.2</p>
+                                <p class="enonce">Texturer le personnage</p>
+                                <input type="checkbox" class="checkbox">
                             </div>
                         </div>
-
-                        <div class="column sgap" style="width: 500px;">
-                            <h3>Sous-tâches</h3>
-                            <div class="taches">
-                                <div class="tache">
-                                    <div class="tache_header">
-                                        <p class="numero">#2.1</p>
-                                        <p class="enonce">Modéliser le personnage</p>
-                                        <input type="checkbox" class="checkbox" checked>
-                                    </div>
-                                    <p class="date">Fait le 28 avril 2024 à 10h34</p>
-                                </div>
-                                <div class="tache">
-                                    <div class="tache_header">
-                                        <p class="numero">#2.2</p>
-                                        <p class="enonce">Texturer le personnage</p>
-                                        <input type="checkbox" class="checkbox">
-                                    </div>
-                                </div>
-                                <div class="tache">
-                                    <div class="tache_header">
-                                        <p class="numero">#2.3</p>
-                                        <p class="enonce">Animer le personnage</p>
-                                        <input type="checkbox" class="checkbox" >
-                                    </div>
-                                </div>
+                        <div class="tache">
+                            <div class="tache_header">
+                                <p class="numero">#2.3</p>
+                                <p class="enonce">Animer le personnage</p>
+                                <input type="checkbox" class="checkbox" >
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>

@@ -119,6 +119,10 @@ article{
     overflow-y: auto;
 }
 
+.lightbox{
+    display: none;
+}
+
 #container{
     position: absolute;
     inset: 0;

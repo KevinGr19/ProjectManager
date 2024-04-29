@@ -40,10 +40,17 @@ function hideLightbox(){
     overlay.classList.remove('show')
 }
 
-// overlay.addEventListener('click', hideLightbox)
-// lightbox.addEventListener('click', (e) => {
-//     e.stopPropagation()
-// })
+const lightboxes = {}
+document.querySelectorAll(".lightbox").forEach(l => {
+    lightboxes[l.id] = l.innerHTML
+    l.remove()
+})
+
+function loadLightbox(id){
+    showLightbox()
+    lightbox.innerHTML = lightboxes[id]
+}
+
 closeButton(lightbox.parentNode, hideLightbox, '15px')
 //#endregion
 
