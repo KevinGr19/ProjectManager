@@ -62,3 +62,9 @@ function dateToText(date){
 	if(!date) return null
 	return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} à ${date.getHours().toString().padStart(2, '0')}h${date.getMinutes().toString().padStart(2, '0')}`
 }
+
+function arrayCompare(col1, col2, func){
+	if(col1.length != col2.length) return false
+	for(let i in col1) if(!func(col1[i], col2[i])) return false
+	return true
+}

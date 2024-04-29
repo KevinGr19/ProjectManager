@@ -1,3 +1,40 @@
+//#region Data utils
+class Watcher{
+
+    constructor(){
+        this.handlers = {}
+    }
+
+    static toWatcherProxy(object){
+        if(object.isWatcherProxy) return object
+        object.isWatcherProxy = true
+
+        return new Proxy(object, {
+            set(o, prop, val){
+                o[prop] = val
+                if(o.watcher) o.watcher.call(prop, val)
+                return true
+            }
+        })
+    }
+
+    call(prop, value){
+        if(this.handlers[prop]) Object.values(this.handlers[prop]).forEach(h => h(value))
+    }
+
+    listen(prop, listener_id, action){
+        this.handlers[prop] ??= {}
+        this.handlers[prop][listener_id] = action
+    }
+
+    remove(prop, listener_id){
+        if(listener_id === undefined) delete this.handlers[prop]
+        else if(this.handlers[prop]) delete this.handlers[prop][listener_id]
+    }
+
+}
+//#endregion
+
 //#region Data
 class Project{
 
@@ -46,6 +83,12 @@ class AbstractTask{
         this.modifiedAt = null
         this.finished = false
         this.finishedAt = null
+
+        this.watcher = new Watcher()
+    }
+
+    get canShowDate(){
+        return (this.finished && this.finishedAt);
     }
 
 }
@@ -59,12 +102,6 @@ class Task extends AbstractTask{
         this.subtasks = []
 
         this.project.tasks.push(this)
-
-        this.watcher = new Watcher()
-    }
-
-    get canShowDate(){
-        return this.finished && this.finishedAt;
     }
 
     getDoneSubtasks(){
@@ -85,42 +122,7 @@ class SubTask extends AbstractTask{
 }
 //#endregion
 
-//#region Binding
-class Watcher{
-
-    constructor(){
-        this.handlers = {}
-    }
-
-    static toWatcherProxy(object){
-        if(object.isWatcherProxy) return object
-        object.isWatcherProxy = true
-
-        return new Proxy(object, {
-            set(o, prop, val){
-                o[prop] = val
-                if(o.watcher) o.watcher.call(prop, val)
-                return true
-            }
-        })
-    }
-
-    call(prop, value){
-        if(this.handlers[prop]) Object.values(this.handlers[prop]).forEach(h => h(value))
-    }
-
-    listen(prop, listener_id, action){
-        this.handlers[prop] ??= {}
-        this.handlers[prop][listener_id] = action
-    }
-
-    remove(prop, listener_id){
-        if(listener_id === undefined) delete this.handlers[prop]
-        else if(this.handlers[prop]) delete this.handlers[prop][listener_id]
-    }
-
-}
-
+//#region View models
 class ProjectVM{
 
     constructor(parent, project){
@@ -135,14 +137,16 @@ class ProjectVM{
         this.titleInput.addEventListener('change', e => this.project.title = e.currentTarget.value)
         this.descriptionInput.addEventListener('change', e => this.project.description = e.currentTarget.value)
 
+        this.taskCounter = parent.querySelector("#taches-compteur")
+
         this.addWatchers()
-        this.update()
     }
 
     update(){
         this.updateTitle()
         this.updateDescription()
         this.updateDates()
+        this.updateTaskCounter()
     }
 
     updateTitle(){
@@ -153,9 +157,18 @@ class ProjectVM{
         this.descriptionInput.value = this.project.description
     }
 
+    updateTaskCounter(){
+        this.taskCounter.innerText = `${this.project.tasks.length} tâches`
+    }
+
     updateDates(){
         this.createdAt.innerText = dateToText(this.project.createdAt)
         this.modifiedAt.innerText = dateToText(this.project.modifiedAt)
+    }
+
+    setReadOnly(state){
+        this.titleInput.toggleAttribute('readonly', state)
+        this.descriptionInput.toggleAttribute('readonly', state)
     }
 
     addWatchers(){
@@ -177,7 +190,7 @@ class TaskVM{
         this.header = this.root.create('div.tache_header')
         this.numero = this.header.create('p.numero')
         this.enonce = this.header.create('p.enonce')
-        this.compteur = this.header.create('p.compteur')
+        
         this.checkbox = this.header.create('input[type="checkbox"].checkbox')
         this.date = this.root.create('p.date')
 
@@ -187,13 +200,11 @@ class TaskVM{
         })
 
         this.addWatchers()
-        this.update()
     }
 
     update(){
         this.updateId()
         this.updateName()
-        this.updateCounter()
         this.updateFinished()
     }
 
@@ -205,19 +216,13 @@ class TaskVM{
         this.enonce.innerText = this.task.name
     }
 
-    updateCounter(){
-        this.compteur.innerText = this.task.subtasks.length > 0 ?
-             `${this.task.getDoneSubtasks()}/${this.task.subtasks.length}` : ''
-    }
-
     updateFinished(){
         this.checkbox.checked = this.task.finished
 
         this.date.classList.toggle('hide', !this.task.canShowDate)
         this.date.innerText = `Fini le ${dateToText(this.task.finishedAt)}`
 
-        if(this.task.finished) this.root.setAttribute('finished', true)
-        else this.root.removeAttribute('finished')
+        this.root.toggleAttribute('finished', this.task.finished)
     }
 
     addWatchers(){
@@ -229,10 +234,35 @@ class TaskVM{
 
 }
 
+class MainTaskVM extends TaskVM{
+
+    constructor(parent, task){
+        super(parent, task)
+        this.compteur = this.header.create('p.compteur')
+        this.checkbox.parentNode.appendChild(this.checkbox)
+    }
+
+    update(){
+        super.update()
+        this.updateCounter()
+    }
+
+    updateCounter(){
+        this.compteur.innerText = this.task.subtasks.length > 0 ?
+             `${this.task.getDoneSubtasks()}/${this.task.subtasks.length}` : ''
+    }
+
+    addWatchers(){
+        super.addWatchers()
+    }
+
+}
+
 class TaskLightboxVM{
 
     constructor(parent, task){
         this.task = task
+        this.id = task.id
 
         this.title = parent.querySelector('#lb-tache-title')
         this.checkbox = parent.querySelector('#lb-tache-finished')
@@ -248,15 +278,20 @@ class TaskLightboxVM{
         this.nameInput.addEventListener('change', e => this.task.name = e.currentTarget.value)
         this.descriptionInput.addEventListener('change', e => this.task.description = e.currentTarget.value)
 
+        this.tachesParent = parent.querySelector('#lb-taches')
+        this.taches = this.tachesParent.querySelector('.taches')
+        this.tachesCompteur = parent.querySelector("#lb-taches-compteur")
+
         this.addWatchers()
-        this.update()
     }
 
     update(){
         this.updateId()
         this.updateName()
+        this.updateDescription()
         this.updateFinished()
         this.updateDates()
+        this.updateSubtasks()
     }
     
     updateId(){
@@ -282,8 +317,24 @@ class TaskLightboxVM{
         this.modifiedAt.innerText = dateToText(this.task.modifiedAt)
     }
 
+    updateSubtasks(){
+        this.taches.innerHTML = ''
+        this.task.subtasks.forEach(t => {
+            let vm = new TaskVM(this.taches, t)
+            vm.update()
+        })
+
+        this.tachesCompteur.innerText = `(${this.task.subtasks.length})`
+    }
+
+    setReadOnly(state){
+        this.nameInput.toggleAttribute('readonly', state)
+        this.descriptionInput.toggleAttribute('readonly', state)
+    }
+
     addWatchers(){
         this.task.watcher.listen('name', 'lb', () => this.updateName())
+        this.task.watcher.listen('description', 'lb', () => this.updateDescription())
         this.task.watcher.listen('finished', 'lb', () => this.updateFinished())
         this.task.watcher.listen('finishedAt', 'lb', () => this.updateFinished())
         this.task.watcher.listen('createdAt', 'lb', () => this.updateDates())
