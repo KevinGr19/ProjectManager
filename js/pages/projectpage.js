@@ -1,69 +1,7 @@
-function generateFakeProject(){
-    let project = new Project()
-    project.title = "FPS Multijoueur Unity"
-    project.description = "Ceci est la description du projet Unity.\nUne deuxième ligne ici."
-    project.createdAt = new Date(2024, 3, 25, 16, 34)
-    project.modifiedAt = new Date(2024, 3, 27, 10, 34)
-    project.images.push("https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi")
-    project.images.push("https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png")
-
-    // Fake tags
-    project.tags.push(new Tag("Unity", "black"))
-    project.tags.push(new Tag("C#", "green"))
-    project.tags.push(new Tag("Networking", "dodgerblue"))
-    project.tags.push(new Tag("Maths", "darkorange"))
-
-    // Fake tasks
-    let task = new Task(project)
-    task.id = 1
-    task.name = "Créer le projet Unity"
-    task.description = "Description 1"
-    task.createdAt = new Date(2024, 3, 25, 17, 10)
-    task.modifiedAt = new Date(2024, 3, 28, 10, 3)
-    task.finished = true
-    task.finishedAt = new Date(2024, 3, 28, 11, 2)
-    project.tasks.push(task)
-
-    let subtask = new SubTask(task)
-    subtask.id = "1.1"
-    subtask.name = "Installer Unity (dernière version)"
-    subtask.createdAt = new Date(2024, 3, 25, 17, 10)
-    subtask.modifiedAt = new Date(2024, 3, 28, 10, 3)
-    subtask.finished = true
-    task.subtasks.push(subtask)
-
-    subtask = new SubTask(task)
-    subtask.id = "1.2"
-    subtask.name = "Créer le projet"
-    subtask.createdAt = new Date(2024, 3, 25, 17, 12)
-    subtask.modifiedAt = new Date(2024, 3, 28, 10, 5)
-    subtask.finished = true
-    task.subtasks.push(subtask)
-
-    task = new Task(project)
-    task.id = 2
-    task.name = "Modéliser et animer les personnages et ennemis"
-    task.description = "Description 2"
-    task.createdAt = new Date(2024, 3, 26, 12, 10)
-    task.modifiedAt = new Date(2024, 3, 28, 9, 5)
-    task.finished = false
-    project.tasks.push(task)
-
-    task = new Task(project)
-    task.id = 3
-    task.name = "Programmer le CharacterController"
-    task.description = "Description 3"
-    task.createdAt = new Date(2024, 3, 26, 12, 10)
-    task.modifiedAt = new Date(2024, 3, 28, 9, 5)
-    task.finished = false
-    project.tasks.push(task)
-
-    return project
-}
-
 page_loads["projectpage"] = () => {
 
-    let original_project = generateFakeProject()
+    //#region Data
+    let original_project = null
     let project = null
 
     function setupData(){
@@ -75,103 +13,430 @@ page_loads["projectpage"] = () => {
             project.tasks[i] = Watcher.toWatcherProxy(task)
 
             for(let j in task.subtasks){
+                let subtask = task.subtasks[j]
                 task.subtasks[j] = Watcher.toWatcherProxy(task.subtasks[j])
+                subtask.task = task
             }
         }
-    }
-
-    //#region VMs
-    let projectVM = null
-    let tasksVM = []
-    let taskLbVM = null
-
-    function listenTask(task){
-        task.watcher.listen('finished', 'changenotifier', (_) => setEditMode(true))
-    }
-
-    function createProjectVM(){
-        projectVM = new ProjectVM(container, project)
-        projectVM.update()
-        projectVM.setReadOnly(!editMode)
-    }
-
-    function addTaskVM(task){
-        listenTask(task)
-        
-        let taskVM = new MainTaskVM(d_taches, task)
-        tasksVM.push(taskVM)
-        taskVM.update()
-        taskVM.root.addEventListener('click', () => loadTask(taskVM))
-
-        return taskVM
-    }
-
-    function clearTasksVM(){
-        tasksVM.length = 0
-        d_taches.innerHTML = ''
-    }
-
-    function updateLightboxVM(){
-        if(taskLbVM){
-            let taskVM = tasksVM.find(t => t.task.id == taskLbVM.id)
-            if(taskVM) createLightbox(taskVM)
-            else taskLbVM = null
-        }
-    }
-
-    function createLightbox(taskVM){
-        let task = taskVM.task
-
-        taskLbVM = new TaskLightboxVM(lightbox, task, taskVM)
-        task.subtasks.forEach(t => {
-            listenTask(t)
-            t.watcher.listen('finished', 'taskCompteur', (_) => taskVM.updateCounter())
-        })
-
-        taskLbVM.update()
-        taskLbVM.setReadOnly(!editMode)
-    }
-
-    function loadTask(taskVM){
-        loadLightbox("task-lightbox")
-        createLightbox(taskVM)
-    }
-
-    function createNewTask(){
-        if(!editMode) return
-        
-        let task = Watcher.toWatcherProxy(new Task(project))
-        project.tasks.push(task)
-        task.id = project.tasks.length
-        task.name = `Tâche ${task.id}`
-
-        let vm = addTaskVM(task)
-        loadTask(vm)
-    }
-    //#endregion
-
-    function updateProjectPage(){
-        setupData()
-        createProjectVM()
-
-        clearTasksVM()
-        project.tasks.forEach(t => addTaskVM(t))
-
-        updateLightboxVM()
     }
     
     async function updateProject(){
         project.modifiedAt = new Date()
-        original_project = project.clone()
     }
+
+    async function loadProject(){
+        if(project) original_project = project.clone()
+        else original_project = generateFakeProject()
+
+        setupData()
+        projectVM.project = project
+    }
+    //#endregion
     
-    //#region Floating buttons
+    //#region IHM
+    class ProjectVM{
+
+        #project = null
+
+        constructor(root){
+            this.root = root
+
+            this.t_title = root.querySelector(".title")
+            this.i_title = root.querySelector("#titre-projet")
+            this.i_description = root.querySelector("#description-projet")
+            this.t_created = root.querySelector("#created-projet")
+            this.t_modified = root.querySelector("#modified-projet")
+            this.t_taskCounter = root.querySelector("#taches-compteur")
+            this.b_addTask = root.querySelector("#taches-ajout")
+            this.d_tags = root.querySelector("#etiquettes-projet")
+            this.d_progressBar = root.querySelector("#progressbar")
+            this.t_progressBar = root.querySelector("#text-progressbar")
+            this.d_progressFill = this.d_progressBar.querySelector("span")
+            this.d_tasks = root.querySelector("#taches-projet")
+
+            this.b_addTask.addEventListener('click', () => {
+                if(editMode) this.createNewTask()
+            })
+
+            this.tasksVM = []
+            this.lightboxTaskVM = null
+
+            this.setupBindingTo()
+        }
+
+        get project(){
+            return this.#project
+        }
+
+        set project(value){
+            this.#project = value
+            this.setupBindingFrom()
+            this.updateAll()
+            this.refreshLightbox()
+        }
+
+        //#region Binding
+        setupBindingTo(){
+            this.i_title.addEventListener('change', e => this.project.title = e.currentTarget.value)
+            this.i_description.addEventListener('change', e => this.project.description = e.currentTarget.value)
+        }
+
+        setupBindingFrom(){
+            this.project.watcher.listen('title', 'vm', () => this.updateTitle())
+            this.project.watcher.listen('description', 'vm', () => this.updateDescription())
+        }
+
+        updateTitle(){
+            this.i_title.value = this.t_title.innerText = this.project.title
+        }
+
+        updateDescription(){
+            this.i_description.value = this.project.description
+        }
+
+        updateDates(){
+            this.t_created.innerText = dateToText(this.project.createdAt)
+            this.t_modified.innerText = dateToText(this.project.modifiedAt)
+        }
+
+        updateTaskCounter(){
+            this.t_taskCounter.innerText = `${this.project.tasks.length} tâches`
+        }
+
+        updateTaskProgressBar(){
+            let ratio = this.project.getRatio()
+            if(ratio === null)
+                this.d_progressBar.classList.add('hide')
+            else {
+                ratio *= 100
+                this.d_progressBar.classList.remove('hide')
+                this.d_progressFill.style.width = `${ratio}%`
+                this.t_progressBar.innerText = `${Math.round(ratio)}%`
+            }
+        }
+
+        updateTasks(){
+            this.tasksVM.length = 0
+            this.d_tasks.innerHTML = ''
+
+            this.project.tasks.forEach(task => this.addTask(task))
+        }
+
+        updateTags(){
+            this.d_tags.innerHTML = ''
+            this.project.tags.forEach(tag => this.d_tags.appendChild(tag.toHTML()))
+        }
+
+        updateAll(){
+            this.updateTitle()
+            this.updateDescription()
+            this.updateDates()
+            this.updateTaskCounter()
+            this.updateTaskProgressBar()
+            this.updateTasks()
+            this.updateTags()
+        }
+        //#endregion
+
+        refreshEditMode(){
+            this.i_title.toggleAttribute('readonly', !editMode)
+            this.i_description.toggleAttribute('readonly', !editMode)
+            this.b_addTask.classList.toggle('hide', !editMode)
+
+            this.lightboxTaskVM?.refreshEditMode()
+        }
+
+        openTask(task){
+            if(!this.lightboxTaskVM){
+                loadLightbox("task-lightbox", {
+                    onClose: () => {
+                        this.lightboxTaskVM.removeBinding()
+                        this.lightboxTaskVM = null
+                    }
+                })
+                this.lightboxTaskVM = new TaskLightBoxVM(lightbox)
+                this.lightboxTaskVM.refreshEditMode()
+            }
+
+            this.lightboxTaskVM.task = task
+        }
+
+        addTask(task){
+            let taskVM = new TaskVM(this.d_tasks)
+            taskVM.task = task
+
+            this.tasksVM.push(taskVM)
+            return taskVM
+        }
+
+        createNewTask(){
+            let newTask = Watcher.toWatcherProxy(new Task(this.project))
+            this.project.tasks.push(newTask)
+
+            newTask.id = this.project.tasks.length
+            newTask.name = `Tâche ${newTask.id}`
+
+            let vm = this.addTask(newTask)
+            vm.root.classList.add('added')
+
+            this.updateTaskCounter()
+            this.updateTaskProgressBar()
+        }
+
+        refreshLightbox(){
+            if(!this.lightboxTaskVM) return
+
+            let task = this.project.tasks.find(t => t.id == this.lightboxTaskVM.task.id)
+            if(task) this.lightboxTaskVM.task = task
+            else closeLightbox()
+        }
+    }
+
+    class AbstractTaskVM{
+
+        #task = null
+
+        constructor(root){
+            this.root = root.create('div.tache')
+            this.header = this.root.create('div.tache_header')
+            this.t_id = this.header.create('p.numero')
+            this.t_name = this.header.create('p.enonce')
+            this.i_checkbox = this.header.create('input[type="checkbox"].checkbox')
+            this.t_date = this.root.create('p.date')
+
+            this.setupBindingTo()
+        }
+
+        get task(){
+            return this.#task
+        }
+
+        set task(value){
+            this.#task = value
+            this.setupBindingFrom()
+            listenTaskCheckbox(this.task)
+            this.updateAll()
+        }
+
+        //#region Binding
+        setupBindingTo(){
+            this.i_checkbox.addEventListener('change', e => this.task.finished = e.currentTarget.checked)
+            this.i_checkbox.addEventListener('click', e => e.stopPropagation())
+        }
+
+        setupBindingFrom(){
+            this.task.watcher.listen('finished', 'vm', () => this.updateFinished())
+        }
+
+        updateId(){
+            this.t_id.innerText = `#${this.task.id}`
+        }
+
+        updateName(){
+            this.t_name.innerText = this.task.name
+        }
+
+        updateFinished(){
+            this.i_checkbox.checked = this.task.finished
+            this.root.toggleAttribute('finished', this.task.finished)
+
+            this.t_date.classList.toggle('hide', !this.task.canShowDate)
+            this.t_date.innerText = `Fini le ${dateToText(this.task.finishedAt)}`
+        }
+
+        updateAll(){
+            this.updateId()
+            this.updateName()
+            this.updateFinished()
+        }
+        //#endregion
+
+    }
+
+    class TaskVM extends AbstractTaskVM{
+
+        constructor(root){
+            super(root)
+            this.t_counter = this.header.create('p.compteur')
+            this.header.insertBefore(this.t_counter, this.i_checkbox)
+
+            this.root.addEventListener('click', () => projectVM.openTask(this.task))
+        }
+
+        //#region Binding
+        setupBindingFrom(){
+            super.setupBindingFrom()
+            this.task.watcher.listen('subtasks', 'vm', () => this.updateCounter())
+        }
+
+        updateCounter(){
+            this.t_counter.innerText = this.task.subtasks.length ? 
+                `${this.task.getDoneSubtasks()}/${this.task.subtasks.length}` : ''
+        }
+
+        updateAll(){
+            super.updateAll()
+            this.updateCounter()
+        }
+        //#endregion
+    }
+
+    class TaskLightBoxVM{
+
+        #task = null
+
+        constructor(root){
+            this.root = root
+
+            this.t_title = root.querySelector('#lb-tache-title')
+            this.i_checkbox = root.querySelector('#lb-tache-finished')
+            this.t_date = root.querySelector('#lb-tache-finishedAt')
+            this.i_name = root.querySelector('#tache_nom')
+            this.i_description = root.querySelector('#tache_description')
+            this.t_created = root.querySelector("#tache_created")
+            this.t_modified = root.querySelector("#tache_modified")
+            this.d_tasks = root.querySelector('.taches')
+            this.t_taskCounter = root.querySelector("#lb-taches-compteur")
+            this.b_addSubTask = root.querySelector("#lb-taches-ajout")
+
+            this.b_addSubTask.addEventListener('click', () => {
+                if(editMode) this.createNewSubTask()
+            })
+
+            this.subtasksVM = []
+            
+            this.setupBindingTo()
+        }
+        
+        get task(){
+            return this.#task
+        }
+        
+        set task(value){
+            this.#task = value
+            this.setupBindingFrom()
+            this.updateAll()
+        }
+        
+        //#region Binding
+        setupBindingTo(){
+            this.i_checkbox.addEventListener('change', e => this.task.finished = e.currentTarget.checked)
+            this.i_name.addEventListener('change', e => this.task.name = e.currentTarget.value)
+            this.i_description.addEventListener('change', e => this.task.description = e.currentTarget.value)
+        }
+
+        setupBindingFrom(){
+            this.task.watcher.listen('finished', 'lb-vm', () => this.updateFinished())
+        }
+
+        removeBinding(){
+            this.task.watcher.removeListeners('lb-vm')
+        }
+
+        updateId(){
+            this.t_title.innerText = `Tâche #${this.task.id}`
+        }
+
+        updateName(){
+            this.i_name.value = this.task.name
+        }
+
+        updateDescription(){
+            this.i_description.value = this.task.description
+        }
+
+        updateDates(){
+            this.t_created.innerText = dateToText(this.task.createdAt)
+            this.t_modified.innerText = dateToText(this.task.modifiedAt)
+        }
+
+        updateFinished(){
+            this.i_checkbox.checked = this.task.finished
+            this.t_date.classList.toggle('hide', !this.task.canShowDate)
+            this.t_date.innerText = `Fini le ${dateToText(this.task.finishedAt)}`
+        }
+
+        updateSubTaskCounter(){
+            this.t_taskCounter.innerText = `(${this.task.subtasks.length})`
+        }
+
+        updateSubTasks(){
+            this.subtasksVM.length = 0
+            this.d_tasks.innerHTML = ''
+            this.task.subtasks.forEach(task => this.addSubTask(task))
+        }
+
+        updateAll(){
+            this.updateId()
+            this.updateName()
+            this.updateDescription()
+            this.updateDates()
+            this.updateFinished()
+            this.updateSubTaskCounter()
+            this.updateSubTasks()
+        }
+        //#endregion
+
+        addSubTask(subTask){
+            let subTaskVM = new SubTaskVM(this.d_tasks)
+            subTaskVM.task = subTask
+            this.subtasksVM.push(subTaskVM)
+            return subTaskVM
+        }
+
+        createNewSubTask(){
+            let newSubTask = Watcher.toWatcherProxy(new SubTask(this.task))
+            this.task.subtasks.push(newSubTask)
+            
+            newSubTask.id = `${this.task.id}.${this.task.subtasks.length}`
+            newSubTask.name = `Sous-tâche ${newSubTask.id}`
+
+            let vm = this.addSubTask(newSubTask)
+            vm.root.classList.add('added')
+
+            this.task.watcher.trigger('subtasks')
+        }
+
+        refreshEditMode(){
+            this.i_name.toggleAttribute('readonly', !editMode)
+            this.i_description.toggleAttribute('readonly', !editMode)
+            this.b_addSubTask.classList.toggle('hide', !editMode)
+        }
+
+    }
+
+    class SubTaskVM extends AbstractTaskVM{
+
+        constructor(root){
+            super(root)
+        }
+
+        //#region Binding
+        setupBindingFrom(){
+            super.setupBindingFrom()
+            this.task.watcher.listen('finished', 'subtask-vm', () => this.task.task.watcher.trigger('subtasks'))
+        }
+        //#endregion
+
+    }
+    //#endregion
+
+    //#region Actions
+    let projectVM = new ProjectVM(container)
+
     const floating_button = document.querySelector(".floating_button")
     const edit_button = floating_button.querySelector("#edit-button")
     const cancel_button = floating_button.querySelector("#cancel-button")
     const save_button = floating_button.querySelector("#save-button")
     
     let editMode = null
+
+    function listenTaskCheckbox(task){
+        task.watcher.listen('finished', 'change_listener', _ => {
+            setEditMode(true)
+            if(task instanceof Task) projectVM.updateTaskProgressBar()
+        })
+    }
     
     function setEditMode(edit){
         if(edit == editMode) return
@@ -181,33 +446,30 @@ page_loads["projectpage"] = () => {
         cancel_button.classList.toggle('hide', !editMode)
         save_button.classList.toggle('hide', !editMode)
 
-        if(projectVM) projectVM.setReadOnly(!edit)
-        if(taskLbVM) taskLbVM.setReadOnly(!edit)
+        projectVM.refreshEditMode()
     }
 
     function cancelChanges(){
+        setupData()
+        projectVM.project = project
+
         setEditMode(false)
-        updateProjectPage()
     }
     
     function saveChanges(){
-        updateProject().then(() => {
-            setEditMode(false)
-            updateProjectPage()
-        })
+        updateProject()
+            .then(() => loadProject())
+            .then(() => {
+                setEditMode(false)
+            })
     }
     
     edit_button.addEventListener('click', () => setEditMode(true))
     cancel_button.addEventListener('click', () => cancelChanges())
     save_button.addEventListener('click', () => saveChanges())
     //#endregion
-    
-    const b_ajoutTache = document.querySelector("#taches-ajout")
-    b_ajoutTache.addEventListener('click', () => createNewTask())
 
+    loadProject()
     setEditMode(false)
     floating_button.classList.remove('hide')
-
-    updateProject()
-    updateProjectPage()
 }

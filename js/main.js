@@ -31,14 +31,7 @@ function preloadPage(){
 //#region Lightbox
 const overlay = document.querySelector(".overlay")
 const lightbox = overlay.querySelector("#lightbox")
-
-function showLightbox(){
-    overlay.classList.add('show')
-}
-
-function hideLightbox(){
-    overlay.classList.remove('show')
-}
+let lightboxCloseAction = null
 
 const lightboxes = {}
 document.querySelectorAll(".lightbox").forEach(l => {
@@ -46,12 +39,25 @@ document.querySelectorAll(".lightbox").forEach(l => {
     l.remove()
 })
 
-function loadLightbox(id){
-    showLightbox()
+function loadLightbox(id, {onClose}){
+    overlay.classList.add('show')
+
+    if(lightboxCloseAction) lightboxCloseAction()
+    lightboxCloseAction = onClose
+
     lightbox.innerHTML = lightboxes[id]
 }
 
-closeButton(lightbox.parentNode, hideLightbox, '15px')
+function closeLightbox(){
+    overlay.classList.remove('show')
+
+    if(lightboxCloseAction) lightboxCloseAction()
+    lightboxCloseAction = null
+
+    lightbox.innerHTML = ''
+}
+
+closeButton(lightbox.parentNode, closeLightbox, '15px')
 //#endregion
 
 setTimeout(() => {

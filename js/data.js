@@ -1,13 +1,14 @@
 //#region Data utils
 class Watcher{
 
-    constructor(){
+    constructor(object){
+        this.object = object
         this.handlers = {}
     }
 
     static toWatcherProxy(object){
-        if(object.isWatcherProxy) return object
-        object.isWatcherProxy = true
+        if(object.watcher) return object
+        object.watcher = new Watcher(object)
 
         return new Proxy(object, {
             set(o, prop, val){
@@ -32,6 +33,14 @@ class Watcher{
         else if(this.handlers[prop]) delete this.handlers[prop][listener_id]
     }
 
+    removeListeners(listener_id){
+        for(let handlers of Object.values(this.handlers)) delete handlers[listener_id]
+    }
+
+    trigger(prop){
+        this.call(prop, this.object[prop])
+    }
+
 }
 //#endregion
 
@@ -46,8 +55,6 @@ class Project{
         this.images = []
         this.tasks = []
         this.tags = []
-
-        this.watcher = new Watcher()
     }
 
     getRatio(){
@@ -100,12 +107,30 @@ class AbstractTask{
         this.modifiedAt = null
         this.finished = false
         this.finishedAt = null
-
-        this.watcher = new Watcher()
     }
 
     get canShowDate(){
         return (this.finished && this.finishedAt);
+    }
+
+    isModified(oldTask){
+        return this.id != oldTask.id
+            || this.name != oldTask.id
+    }
+
+    processChanges(oldTask){
+        if(!oldTask){
+            this.createdAt = new Date()
+            this.modifiedAt = new Date()
+        }
+
+        else {
+            if(!oldTask.finished && this.finished) this.finishedAt = new Date()
+            else if(oldTask.finished && !this.finished) this.finishedAt = null
+
+            if(this.isModified(oldTask))
+                this.modifiedAt = new Date()
+        }
     }
 
 }
@@ -137,6 +162,11 @@ class Task extends AbstractTask{
         return newTask
     }
 
+    isModified(oldTask){
+        return super.isModified(oldTask)
+            || this.description != oldTask.description
+    }
+
 }
 
 class SubTask extends AbstractTask{
@@ -161,304 +191,65 @@ class SubTask extends AbstractTask{
 }
 //#endregion
 
-//#region View models
-class ProjectVM{
+function generateFakeProject(){
+    let project = new Project()
+    project.title = "FPS Multijoueur Unity"
+    project.description = "Ceci est la description du projet Unity.\nUne deuxième ligne ici."
+    project.createdAt = new Date(2024, 3, 25, 16, 34)
+    project.modifiedAt = new Date(2024, 3, 27, 10, 34)
+    project.images.push("https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi")
+    project.images.push("https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png")
 
-    constructor(parent, project){
-        this.project = project
+    // Fake tags
+    project.tags.push(new Tag("Unity", "black"))
+    project.tags.push(new Tag("C#", "green"))
+    project.tags.push(new Tag("Networking", "dodgerblue"))
+    project.tags.push(new Tag("Maths", "darkorange"))
 
-        this.bigtitle = parent.querySelector(".title")
-        this.titleInput = parent.querySelector("#titre-projet")
-        this.descriptionInput = parent.querySelector("#description-projet")
-        this.createdAt = parent.querySelector("#created-projet")
-        this.modifiedAt = parent.querySelector("#modified-projet")
+    // Fake tasks
+    let task = new Task(project)
+    task.id = 1
+    task.name = "Créer le projet Unity"
+    task.description = "Description 1"
+    task.createdAt = new Date(2024, 3, 25, 17, 10)
+    task.modifiedAt = new Date(2024, 3, 28, 10, 3)
+    task.finished = true
+    task.finishedAt = new Date(2024, 3, 28, 11, 2)
+    project.tasks.push(task)
 
-        this.titleInput.addEventListener('change', e => this.project.title = e.currentTarget.value)
-        this.descriptionInput.addEventListener('change', e => this.project.description = e.currentTarget.value)
+    let subtask = new SubTask(task)
+    subtask.id = "1.1"
+    subtask.name = "Installer Unity (dernière version)"
+    subtask.createdAt = new Date(2024, 3, 25, 17, 10)
+    subtask.modifiedAt = new Date(2024, 3, 28, 10, 3)
+    subtask.finished = true
+    task.subtasks.push(subtask)
 
-        this.taskCounter = parent.querySelector("#taches-compteur")
-        this.buttonAjout = parent.querySelector("#taches-ajout")
+    subtask = new SubTask(task)
+    subtask.id = "1.2"
+    subtask.name = "Créer le projet"
+    subtask.createdAt = new Date(2024, 3, 25, 17, 12)
+    subtask.modifiedAt = new Date(2024, 3, 28, 10, 5)
+    subtask.finished = true
+    task.subtasks.push(subtask)
 
-        this.divEtiquettes = parent.querySelector("#etiquettes-projet")
-        this.divProgressbar = parent.querySelector("#progressbar")
-        this.progressbarFill = this.divProgressbar.querySelector("span")
-        this.textProgressbar = parent.querySelector("#text-progressbar")
-        this.divTaches = parent.querySelector("#taches-projet")
+    task = new Task(project)
+    task.id = 2
+    task.name = "Modéliser et animer les personnages et ennemis"
+    task.description = "Description 2"
+    task.createdAt = new Date(2024, 3, 26, 12, 10)
+    task.modifiedAt = new Date(2024, 3, 28, 9, 5)
+    task.finished = false
+    project.tasks.push(task)
 
-        this.addWatchers()
-    }
-    
-    updateProgressbar(){
-        let ratio = this.project.getRatio()
-        if(ratio === null){
-            this.divProgressbar.classList.add('hide')
-        }
-        else{
-            this.divProgressbar.classList.remove('hide')
-            
-            let percentage = Math.round(ratio * 100)
-            this.textProgressbar.innerText = this.divProgressbar.style.width = `${percentage}%`
-        }
-    }
+    task = new Task(project)
+    task.id = 3
+    task.name = "Programmer le CharacterController"
+    task.description = "Description 3"
+    task.createdAt = new Date(2024, 3, 26, 12, 10)
+    task.modifiedAt = new Date(2024, 3, 28, 9, 5)
+    task.finished = false
+    project.tasks.push(task)
 
-    update(){
-        this.updateTitle()
-        this.updateDescription()
-        this.updateDates()
-        this.updateTaskCounter()
-        this.updateEtiquettes()
-    }
-
-    updateTitle(){
-        this.bigtitle.innerText = this.titleInput.value = this.project.title
-    }
-
-    updateDescription(){
-        this.descriptionInput.value = this.project.description
-    }
-
-    updateTaskCounter(){
-        this.taskCounter.innerText = `${this.project.tasks.length} tâches`
-    }
-
-    updateDates(){
-        this.createdAt.innerText = dateToText(this.project.createdAt)
-        this.modifiedAt.innerText = dateToText(this.project.modifiedAt)
-    }
-
-    updateEtiquettes(){
-        this.divEtiquettes.innerHTML = ''
-        if(this.project.tags) this.project.tags.forEach(t => this.divEtiquettes.appendChild(t.toHTML()))
-        else this.divEtiquettes.innerText = 'Aucune'
-    }
-
-    setReadOnly(state){
-        this.titleInput.toggleAttribute('readonly', state)
-        this.descriptionInput.toggleAttribute('readonly', state)
-        this.buttonAjout.classList.toggle('hide', state)
-    }
-
-    addWatchers(){
-        this.project.watcher.listen('title', 'page', () => this.updateTitle())
-        this.project.watcher.listen('description', 'page', () => this.updateDescription())
-        this.project.watcher.listen('createdAt', 'page', () => this.updateDates())
-        this.project.watcher.listen('modifiedAt', 'page', () => this.updateDates())
-    }
-
+    return project
 }
-
-class TaskVM{
-
-    constructor(parent, task){
-        this.task = task
-
-        this.root = parent.create("div.tache")
-        
-        this.header = this.root.create('div.tache_header')
-        this.numero = this.header.create('p.numero')
-        this.enonce = this.header.create('p.enonce')
-        
-        this.checkbox = this.header.create('input[type="checkbox"].checkbox')
-        this.date = this.root.create('p.date')
-
-        this.checkbox.addEventListener('change', e => this.task.finished = e.currentTarget.checked)
-        this.checkbox.addEventListener('click', e => {
-            e.stopPropagation()
-        })
-
-        this.addWatchers()
-    }
-
-    update(){
-        this.updateId()
-        this.updateName()
-        this.updateFinished()
-    }
-
-    updateId(){
-        this.numero.innerText = `#${this.task.id}`
-    }
-
-    updateName(){
-        this.enonce.innerText = this.task.name
-    }
-
-    updateFinished(){
-        this.checkbox.checked = this.task.finished
-
-        this.date.classList.toggle('hide', !this.task.canShowDate)
-        this.date.innerText = `Fini le ${dateToText(this.task.finishedAt)}`
-
-        this.root.toggleAttribute('finished', this.task.finished)
-    }
-
-    addWatchers(){
-        this.task.watcher.listen('id', 'bar', () => this.updateId())
-        this.task.watcher.listen('name', 'bar', () => this.updateName())
-        this.task.watcher.listen('finished', 'bar', () => this.updateFinished())
-        this.task.watcher.listen('finishedAt', 'bar', () => this.updateFinished())
-    }
-
-}
-
-class SubTaskVM extends TaskVM{
-
-    constructor(parent, task){
-        super(parent, task)
-
-        this.nameInput = this.header.create('input[type="text"].enonce.novpad')
-        this.nameInput.addEventListener('change', e => this.task.name = e.currentTarget.value)
-
-        this.header.insertBefore(this.nameInput, this.checkbox)
-    }
-
-    updateName(){
-        super.updateName()
-        this.nameInput.value = this.task.name
-    }
-
-    setReadOnly(state){
-        this.enonce.classList.toggle('hide', !state)
-        this.nameInput.classList.toggle('hide', state)
-    }
-
-}
-
-class MainTaskVM extends TaskVM{
-
-    constructor(parent, task){
-        super(parent, task)
-        this.compteur = this.header.create('p.compteur')
-        this.checkbox.parentNode.appendChild(this.checkbox)
-    }
-
-    update(){
-        super.update()
-        this.updateCounter()
-    }
-
-    updateCounter(){
-        this.compteur.innerText = this.task.subtasks.length > 0 ?
-             `${this.task.getDoneSubtasks()}/${this.task.subtasks.length}` : ''
-    }
-
-    addWatchers(){
-        super.addWatchers()
-    }
-
-}
-
-class TaskLightboxVM{
-
-    constructor(parent, task, taskVM){
-        this.task = task
-        this.id = task.id
-
-        this.taskVM = taskVM
-
-        this.title = parent.querySelector('#lb-tache-title')
-        this.checkbox = parent.querySelector('#lb-tache-finished')
-        this.date = parent.querySelector('#lb-tache-finishedAt')
-
-        this.checkbox.addEventListener('change', e => this.task.finished = e.currentTarget.checked)
-        
-        this.nameInput = parent.querySelector('#tache_nom')
-        this.descriptionInput = parent.querySelector('#tache_description')
-        this.createdAt = parent.querySelector("#tache_created")
-        this.modifiedAt = parent.querySelector("#tache_modified")
-        
-        this.nameInput.addEventListener('change', e => this.task.name = e.currentTarget.value)
-        this.descriptionInput.addEventListener('change', e => this.task.description = e.currentTarget.value)
-
-        this.tachesParent = parent.querySelector('#lb-taches')
-        this.taches = this.tachesParent.querySelector('.taches')
-        this.tachesCompteur = parent.querySelector("#lb-taches-compteur")
-        this.buttonAjout = parent.querySelector("#lb-taches-ajout")
-
-        this.buttonAjout.onclick = () => this.createNewSubTask()
-
-        this.readonly = false
-        this.addWatchers()
-
-        this.subtasksVM = []
-    }
-
-    update(){
-        this.updateId()
-        this.updateName()
-        this.updateDescription()
-        this.updateFinished()
-        this.updateDates()
-        this.updateSubtasks()
-    }
-    
-    updateId(){
-        this.title.innerText = `Tâche #${this.task.id}`
-    }
-
-    updateName(){
-        this.nameInput.value = this.task.name
-    }
-
-    updateDescription(){
-        this.descriptionInput.value = this.task.description
-    }
-
-    updateFinished(){
-        this.checkbox.checked = this.task.finished
-        this.date.innerText = this.task.canShowDate ? 
-            `Fini le ${dateToText(this.task.finishedAt)}` : ''
-    }
-
-    updateDates(){
-        this.createdAt.innerText = dateToText(this.task.createdAt)
-        this.modifiedAt.innerText = dateToText(this.task.modifiedAt)
-    }
-
-    updateSubtasks(){
-        this.taches.innerHTML = ''
-        this.subtasksVM.length = 0
-
-        this.task.subtasks.forEach(t => this.addSubtaskVM(t))
-
-        this.tachesCompteur.innerText = `(${this.task.subtasks.length})`
-    }
-
-    addSubtaskVM(subtask){
-        let vm = new SubTaskVM(this.taches, subtask)
-        this.subtasksVM.push(vm)
-
-        vm.setReadOnly(this.readonly)
-        vm.update()
-    }
-
-    createNewSubTask(){
-        let subtask = Watcher.toWatcherProxy(new SubTask(this.task))
-        this.task.subtasks.push(subtask)
-        subtask.id = `${this.task.id}.${this.task.subtasks.length}`
-        subtask.name = `Tâche ${subtask.id}`
-
-        this.addSubtaskVM(subtask)
-        this.taskVM.updateCounter()
-    }
-
-    setReadOnly(state){
-        this.nameInput.toggleAttribute('readonly', state)
-        this.descriptionInput.toggleAttribute('readonly', state)
-        this.buttonAjout.classList.toggle('hide', state)
-
-        this.subtasksVM.forEach(vm => vm.setReadOnly(state))
-        this.readonly = state
-    }
-
-    addWatchers(){
-        this.task.watcher.listen('name', 'lb', () => this.updateName())
-        this.task.watcher.listen('description', 'lb', () => this.updateDescription())
-        this.task.watcher.listen('finished', 'lb', () => this.updateFinished())
-        this.task.watcher.listen('finishedAt', 'lb', () => this.updateFinished())
-        this.task.watcher.listen('createdAt', 'lb', () => this.updateDates())
-        this.task.watcher.listen('modifiedAt', 'lb', () => this.updateDates())
-    }
-
-}
-//#endregion

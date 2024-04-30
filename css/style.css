@@ -3,8 +3,6 @@
     --sec-bg: #ccc;
     --ter-bg: white;
 
-    --marked: #f88;
-
     --border: black;
     --shadow: #0008;
 
@@ -307,10 +305,6 @@ article{
     opacity: 0.5;
 }
 
-.marked{
-    background: var(--marked)
-}
-
 .progressbar{
     height: 18px;
     border: solid 1px var(--border);
@@ -346,4 +340,12 @@ article{
 
 .toggled > :not(.toggleable){
     display: none;
+}
+
+.added{
+    border: solid 2px green !important;
+}
+
+.removed{
+    border: solid 2px red !important;
 }
