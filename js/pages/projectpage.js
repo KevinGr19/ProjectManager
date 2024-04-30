@@ -22,6 +22,7 @@ function generateFakeProject(){
     task.modifiedAt = new Date(2024, 3, 28, 10, 3)
     task.finished = true
     task.finishedAt = new Date(2024, 3, 28, 11, 2)
+    project.tasks.push(task)
 
     let subtask = new SubTask(task)
     subtask.id = "1.1"
@@ -29,7 +30,15 @@ function generateFakeProject(){
     subtask.createdAt = new Date(2024, 3, 25, 17, 10)
     subtask.modifiedAt = new Date(2024, 3, 28, 10, 3)
     subtask.finished = true
-    subtask.finishedAt = new Date(2024, 3, 28, 11, 2)
+    task.subtasks.push(subtask)
+
+    subtask = new SubTask(task)
+    subtask.id = "1.2"
+    subtask.name = "Créer le projet"
+    subtask.createdAt = new Date(2024, 3, 25, 17, 12)
+    subtask.modifiedAt = new Date(2024, 3, 28, 10, 5)
+    subtask.finished = true
+    task.subtasks.push(subtask)
 
     task = new Task(project)
     task.id = 2
@@ -38,6 +47,7 @@ function generateFakeProject(){
     task.createdAt = new Date(2024, 3, 26, 12, 10)
     task.modifiedAt = new Date(2024, 3, 28, 9, 5)
     task.finished = false
+    project.tasks.push(task)
 
     task = new Task(project)
     task.id = 3
@@ -46,15 +56,18 @@ function generateFakeProject(){
     task.createdAt = new Date(2024, 3, 26, 12, 10)
     task.modifiedAt = new Date(2024, 3, 28, 9, 5)
     task.finished = false
+    project.tasks.push(task)
 
     return project
 }
 
 page_loads["projectpage"] = () => {
 
-    let project = generateFakeProject()
+    let original_project = generateFakeProject()
+    let project = null
 
     function setupData(){
+        project = original_project.clone()
         project = Watcher.toWatcherProxy(project)
 
         for(let i in project.tasks){
@@ -88,7 +101,9 @@ page_loads["projectpage"] = () => {
         let taskVM = new MainTaskVM(d_taches, task)
         tasksVM.push(taskVM)
         taskVM.update()
-        taskVM.root.addEventListener('click', () => loadTask(task))
+        taskVM.root.addEventListener('click', () => loadTask(taskVM))
+
+        return taskVM
     }
 
     function clearTasksVM(){
@@ -98,68 +113,57 @@ page_loads["projectpage"] = () => {
 
     function updateLightboxVM(){
         if(taskLbVM){
-            let task = project.tasks.find(t => t.id == taskLbVM.id)
-            if(task) createLightbox(task)
+            let taskVM = tasksVM.find(t => t.task.id == taskLbVM.id)
+            if(taskVM) createLightbox(taskVM)
             else taskLbVM = null
         }
     }
 
-    function createLightbox(task){
-        taskLbVM = new TaskLightboxVM(lightbox, task)
-        task.subtasks.forEach(t => listenTask(t))
+    function createLightbox(taskVM){
+        let task = taskVM.task
+
+        taskLbVM = new TaskLightboxVM(lightbox, task, taskVM)
+        task.subtasks.forEach(t => {
+            listenTask(t)
+            t.watcher.listen('finished', 'taskCompteur', (_) => taskVM.updateCounter())
+        })
+
         taskLbVM.update()
         taskLbVM.setReadOnly(!editMode)
     }
 
-    function loadTask(task){
+    function loadTask(taskVM){
         loadLightbox("task-lightbox")
-        createLightbox(task)
+        createLightbox(taskVM)
+    }
+
+    function createNewTask(){
+        if(!editMode) return
+        
+        let task = Watcher.toWatcherProxy(new Task(project))
+        project.tasks.push(task)
+        task.id = project.tasks.length
+        task.name = `Tâche ${task.id}`
+
+        let vm = addTaskVM(task)
+        loadTask(vm)
     }
     //#endregion
 
-    //#region Wiring up
-    const d_projectEtiquettes = document.querySelector("#etiquettes-projet")
-    const d_progressbar = document.querySelector("#progressbar")
-    const d_progressbarFill = d_progressbar.querySelector("span")
-    const t_progressbar = document.querySelector("#text-progressbar")
-    const d_taches = document.querySelector("#taches-projet")
-    
-    
-    
-    function updateProgressbar(){
-        let ratio = project.getRatio()
-        if(ratio === null){
-            d_progressbar.classList.add('hide')
-        }
-        else{
-            d_progressbar.classList.remove('hide')
-            
-            let percentage = Math.round(ratio * 100)
-            t_progressbar.innerText = d_progressbarFill.style.width = `${percentage}%`
-        }
-    }
-    
-    function updateProject(){
+    function updateProjectPage(){
         setupData()
         createProjectVM()
-        
-        d_projectEtiquettes.innerHTML = ''
-        if(project.tags){
-            project.tags.forEach(t => d_projectEtiquettes.appendChild(t.toHTML()))
-        }
-        else{
-            d_projectEtiquettes.innerText = 'Aucune'
-        }
 
         clearTasksVM()
         project.tasks.forEach(t => addTaskVM(t))
 
         updateLightboxVM()
-        
-        updateProgressbar()
     }
     
-    //#endregion
+    async function updateProject(){
+        project.modifiedAt = new Date()
+        original_project = project.clone()
+    }
     
     //#region Floating buttons
     const floating_button = document.querySelector(".floating_button")
@@ -180,23 +184,30 @@ page_loads["projectpage"] = () => {
         if(projectVM) projectVM.setReadOnly(!edit)
         if(taskLbVM) taskLbVM.setReadOnly(!edit)
     }
-    
-    async function saveAll(){
-        let modifiedAt = new Date()
 
-        project.modifiedAt = modifiedAt
-        
-        updateProject()
-        setEditMode(0)
+    function cancelChanges(){
+        setEditMode(false)
+        updateProjectPage()
+    }
+    
+    function saveChanges(){
+        updateProject().then(() => {
+            setEditMode(false)
+            updateProjectPage()
+        })
     }
     
     edit_button.addEventListener('click', () => setEditMode(true))
-    cancel_button.addEventListener('click', () => setEditMode(false))
-    save_button.addEventListener('click', () => saveAll())
+    cancel_button.addEventListener('click', () => cancelChanges())
+    save_button.addEventListener('click', () => saveChanges())
+    //#endregion
     
+    const b_ajoutTache = document.querySelector("#taches-ajout")
+    b_ajoutTache.addEventListener('click', () => createNewTask())
+
     setEditMode(false)
     floating_button.classList.remove('hide')
-    //#endregion
 
     updateProject()
+    updateProjectPage()
 }

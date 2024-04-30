@@ -3,13 +3,19 @@
     --sec-bg: #ccc;
     --ter-bg: white;
 
+    --marked: #f88;
+
     --border: black;
     --shadow: #0008;
 
     --button: black;
     --button-hover: #444;
+
     --button-valid: green;
     --button-valid-hover: #0A0;
+
+    --button-blue: dodgerblue;
+    --button-blue-hover: #2Af;
 
     --sec: grey;
 }
@@ -43,17 +49,11 @@ button:hover{
     background: var(--button-hover);
 }
 
-button.valid{
-    background: var(--button-valid);
-}
-
-button.valid:hover{
-    background: var(--button-valid-hover);
-}
-
-button.valid:active{
-    background: unset;
-}
+button.valid{background: var(--button-valid);}
+button.valid:hover{background: var(--button-valid-hover);}
+button.blue{background: var(--button-blue);}
+button.blue:hover{background: var(--button-blue-hover);}
+button.valid:active, button.blue:active{background: unset;}
 
 button:active{
     background: white;
@@ -305,6 +305,10 @@ article{
 
 .tache[finished] .compteur{
     opacity: 0.5;
+}
+
+.marked{
+    background: var(--marked)
 }
 
 .progressbar{

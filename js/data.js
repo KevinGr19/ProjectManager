@@ -55,6 +55,19 @@ class Project{
         return this.tasks.reduce((p,c) => c.finished ? p+1 : p, 0)/this.tasks.length
     }
 
+    clone(){
+        let newProject = new Project()
+        newProject.title =  this.title
+        newProject.description =  this.description
+        newProject.createdAt =  this.createdAt
+        newProject.modifiedAt =  this.modifiedAt
+        newProject.images = [...this.images]
+        newProject.tasks = this.tasks.map(t => t.clone())
+        newProject.tags = this.tags.map(t => t.clone())
+
+        return newProject
+    }
+
 }
 
 class Tag{
@@ -70,6 +83,10 @@ class Tag{
         element.innerText = this.name
         element.style.backgroundColor = this.color
         return element
+    }
+
+    clone(){
+        return new Tag(this.name, this.color)
     }
 
 }
@@ -100,12 +117,24 @@ class Task extends AbstractTask{
         this.project = project
         this.description = ""
         this.subtasks = []
-
-        this.project.tasks.push(this)
     }
 
     getDoneSubtasks(){
         return this.subtasks.reduce((p,c) => c.finished ? p+1 : p, 0)
+    }
+
+    clone(){
+        let newTask = new Task(this.project)
+        newTask.id = this.id
+        newTask.name = this.name
+        newTask.createdAt = this.createdAt
+        newTask.modifiedAt = this.modifiedAt
+        newTask.finished = this.finished
+        newTask.finishedAt = this.finishedAt
+        newTask.description = this.description
+        newTask.subtasks = this.subtasks.map(t => t.clone())
+
+        return newTask
     }
 
 }
@@ -115,8 +144,18 @@ class SubTask extends AbstractTask{
     constructor(task){
         super()
         this.task = task
+    }
 
-        this.task.subtasks.push(this)
+    clone(){
+        let newTask = new SubTask(this.task)
+        newTask.id = this.id
+        newTask.name = this.name
+        newTask.createdAt = this.createdAt
+        newTask.modifiedAt = this.modifiedAt
+        newTask.finished = this.finished
+        newTask.finishedAt = this.finishedAt
+
+        return newTask
     }
 
 }
@@ -138,8 +177,28 @@ class ProjectVM{
         this.descriptionInput.addEventListener('change', e => this.project.description = e.currentTarget.value)
 
         this.taskCounter = parent.querySelector("#taches-compteur")
+        this.buttonAjout = parent.querySelector("#taches-ajout")
+
+        this.divEtiquettes = parent.querySelector("#etiquettes-projet")
+        this.divProgressbar = parent.querySelector("#progressbar")
+        this.progressbarFill = this.divProgressbar.querySelector("span")
+        this.textProgressbar = parent.querySelector("#text-progressbar")
+        this.divTaches = parent.querySelector("#taches-projet")
 
         this.addWatchers()
+    }
+    
+    updateProgressbar(){
+        let ratio = this.project.getRatio()
+        if(ratio === null){
+            this.divProgressbar.classList.add('hide')
+        }
+        else{
+            this.divProgressbar.classList.remove('hide')
+            
+            let percentage = Math.round(ratio * 100)
+            this.textProgressbar.innerText = this.divProgressbar.style.width = `${percentage}%`
+        }
     }
 
     update(){
@@ -147,6 +206,7 @@ class ProjectVM{
         this.updateDescription()
         this.updateDates()
         this.updateTaskCounter()
+        this.updateEtiquettes()
     }
 
     updateTitle(){
@@ -166,9 +226,16 @@ class ProjectVM{
         this.modifiedAt.innerText = dateToText(this.project.modifiedAt)
     }
 
+    updateEtiquettes(){
+        this.divEtiquettes.innerHTML = ''
+        if(this.project.tags) this.project.tags.forEach(t => this.divEtiquettes.appendChild(t.toHTML()))
+        else this.divEtiquettes.innerText = 'Aucune'
+    }
+
     setReadOnly(state){
         this.titleInput.toggleAttribute('readonly', state)
         this.descriptionInput.toggleAttribute('readonly', state)
+        this.buttonAjout.classList.toggle('hide', state)
     }
 
     addWatchers(){
@@ -234,6 +301,29 @@ class TaskVM{
 
 }
 
+class SubTaskVM extends TaskVM{
+
+    constructor(parent, task){
+        super(parent, task)
+
+        this.nameInput = this.header.create('input[type="text"].enonce.novpad')
+        this.nameInput.addEventListener('change', e => this.task.name = e.currentTarget.value)
+
+        this.header.insertBefore(this.nameInput, this.checkbox)
+    }
+
+    updateName(){
+        super.updateName()
+        this.nameInput.value = this.task.name
+    }
+
+    setReadOnly(state){
+        this.enonce.classList.toggle('hide', !state)
+        this.nameInput.classList.toggle('hide', state)
+    }
+
+}
+
 class MainTaskVM extends TaskVM{
 
     constructor(parent, task){
@@ -260,9 +350,11 @@ class MainTaskVM extends TaskVM{
 
 class TaskLightboxVM{
 
-    constructor(parent, task){
+    constructor(parent, task, taskVM){
         this.task = task
         this.id = task.id
+
+        this.taskVM = taskVM
 
         this.title = parent.querySelector('#lb-tache-title')
         this.checkbox = parent.querySelector('#lb-tache-finished')
@@ -281,8 +373,14 @@ class TaskLightboxVM{
         this.tachesParent = parent.querySelector('#lb-taches')
         this.taches = this.tachesParent.querySelector('.taches')
         this.tachesCompteur = parent.querySelector("#lb-taches-compteur")
+        this.buttonAjout = parent.querySelector("#lb-taches-ajout")
 
+        this.buttonAjout.onclick = () => this.createNewSubTask()
+
+        this.readonly = false
         this.addWatchers()
+
+        this.subtasksVM = []
     }
 
     update(){
@@ -319,17 +417,38 @@ class TaskLightboxVM{
 
     updateSubtasks(){
         this.taches.innerHTML = ''
-        this.task.subtasks.forEach(t => {
-            let vm = new TaskVM(this.taches, t)
-            vm.update()
-        })
+        this.subtasksVM.length = 0
+
+        this.task.subtasks.forEach(t => this.addSubtaskVM(t))
 
         this.tachesCompteur.innerText = `(${this.task.subtasks.length})`
+    }
+
+    addSubtaskVM(subtask){
+        let vm = new SubTaskVM(this.taches, subtask)
+        this.subtasksVM.push(vm)
+
+        vm.setReadOnly(this.readonly)
+        vm.update()
+    }
+
+    createNewSubTask(){
+        let subtask = Watcher.toWatcherProxy(new SubTask(this.task))
+        this.task.subtasks.push(subtask)
+        subtask.id = `${this.task.id}.${this.task.subtasks.length}`
+        subtask.name = `Tâche ${subtask.id}`
+
+        this.addSubtaskVM(subtask)
+        this.taskVM.updateCounter()
     }
 
     setReadOnly(state){
         this.nameInput.toggleAttribute('readonly', state)
         this.descriptionInput.toggleAttribute('readonly', state)
+        this.buttonAjout.classList.toggle('hide', state)
+
+        this.subtasksVM.forEach(vm => vm.setReadOnly(state))
+        this.readonly = state
     }
 
     addWatchers(){
