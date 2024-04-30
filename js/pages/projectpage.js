@@ -55,7 +55,7 @@ page_loads["projectpage"] = () => {
             this.d_tasks = root.querySelector("#taches-projet")
 
             this.b_addTask.addEventListener('click', () => {
-                if(editMode) this.createNewTask()
+                if(isHardEdit()) this.createNewTask()
             })
 
             this.tasksVM = []
@@ -139,10 +139,11 @@ page_loads["projectpage"] = () => {
         //#endregion
 
         refreshEditMode(){
-            this.i_title.toggleAttribute('readonly', !editMode)
-            this.i_description.toggleAttribute('readonly', !editMode)
-            this.b_addTask.classList.toggle('hide', !editMode)
+            this.i_title.toggleAttribute('readonly', !isHardEdit())
+            this.i_description.toggleAttribute('readonly', !isHardEdit())
+            this.b_addTask.classList.toggle('hide', !isHardEdit())
 
+            this.tasksVM.forEach(vm => vm.refreshEditMode())
             this.lightboxTaskVM?.refreshEditMode()
         }
 
@@ -200,11 +201,13 @@ page_loads["projectpage"] = () => {
             this.root = root.create('div.tache')
             this.header = this.root.create('div.tache_header')
             this.t_id = this.header.create('p.numero')
+            this.i_name = this.header.create('input[type="text"].enonce')
             this.t_name = this.header.create('p.enonce')
             this.i_checkbox = this.header.create('input[type="checkbox"].checkbox')
             this.t_date = this.root.create('p.date')
 
             this.setupBindingTo()
+            this.refreshEditMode()
         }
 
         get task(){
@@ -221,11 +224,15 @@ page_loads["projectpage"] = () => {
         //#region Binding
         setupBindingTo(){
             this.i_checkbox.addEventListener('change', e => this.task.finished = e.currentTarget.checked)
+            this.i_name.addEventListener('change', e => this.task.name = e.currentTarget.value)
+
             this.i_checkbox.addEventListener('click', e => e.stopPropagation())
+            this.i_name.addEventListener('click', e => e.stopPropagation())
         }
 
         setupBindingFrom(){
             this.task.watcher.listen('finished', 'vm', () => this.updateFinished())
+            this.task.watcher.listen('name', 'vm', () => this.updateName())
         }
 
         updateId(){
@@ -233,7 +240,7 @@ page_loads["projectpage"] = () => {
         }
 
         updateName(){
-            this.t_name.innerText = this.task.name
+            this.t_name.innerText = this.i_name.value = this.task.name
         }
 
         updateFinished(){
@@ -250,6 +257,12 @@ page_loads["projectpage"] = () => {
             this.updateFinished()
         }
         //#endregion
+
+        refreshEditMode(){
+            this.i_name.toggleAttribute('readonly', !isHardEdit())
+            this.i_name.classList.toggle('hide', !isHardEdit())
+            this.t_name.classList.toggle('hide', isHardEdit())
+        }
 
     }
 
@@ -300,7 +313,7 @@ page_loads["projectpage"] = () => {
             this.b_addSubTask = root.querySelector("#lb-taches-ajout")
 
             this.b_addSubTask.addEventListener('click', () => {
-                if(editMode) this.createNewSubTask()
+                if(isHardEdit()) this.createNewSubTask()
             })
 
             this.subtasksVM = []
@@ -395,12 +408,15 @@ page_loads["projectpage"] = () => {
             vm.root.classList.add('added')
 
             this.task.watcher.trigger('subtasks')
+            this.updateSubTaskCounter()
         }
 
         refreshEditMode(){
-            this.i_name.toggleAttribute('readonly', !editMode)
-            this.i_description.toggleAttribute('readonly', !editMode)
-            this.b_addSubTask.classList.toggle('hide', !editMode)
+            this.i_name.toggleAttribute('readonly', !isHardEdit())
+            this.i_description.toggleAttribute('readonly', !isHardEdit())
+            this.b_addSubTask.classList.toggle('hide', !isHardEdit())
+
+            this.subtasksVM.forEach(vm => vm.refreshEditMode())
         }
 
     }
@@ -425,26 +441,34 @@ page_loads["projectpage"] = () => {
     let projectVM = new ProjectVM(container)
 
     const floating_button = document.querySelector(".floating_button")
-    const edit_button = floating_button.querySelector("#edit-button")
-    const cancel_button = floating_button.querySelector("#cancel-button")
-    const save_button = floating_button.querySelector("#save-button")
+    const edit_button = document.querySelector("#edit-button")
+    const default_buttons = floating_button.querySelector("#default-buttons")
+    const checkbox_buttons = floating_button.querySelector("#checkbox-buttons")
+
+    const cancel_button = default_buttons.querySelector("#cancel-button")
+    const save_button = default_buttons.querySelector("#save-button")
+    const checkbox_cancel_button = checkbox_buttons.querySelector("#checkbox-cancel-button")
+    const checkbox_confirm_button = checkbox_buttons.querySelector("#checkbox-confirm-button")
     
     let editMode = null
+    const isHardEdit = () => editMode == 1
+    const isSoftEdit = () => editMode == 2
 
     function listenTaskCheckbox(task){
         task.watcher.listen('finished', 'change_listener', _ => {
-            setEditMode(true)
+            setEditMode(2)
             if(task instanceof Task) projectVM.updateTaskProgressBar()
         })
     }
     
     function setEditMode(edit){
         if(edit == editMode) return
+        if(edit == 2 && editMode == 1) return
         editMode = edit
         
-        edit_button.classList.toggle('hide', editMode)
-        cancel_button.classList.toggle('hide', !editMode)
-        save_button.classList.toggle('hide', !editMode)
+        edit_button.classList.toggle('hide', isSoftEdit() || isHardEdit())
+        default_buttons.classList.toggle('hide', !isHardEdit())
+        checkbox_buttons.classList.toggle('hide', !isSoftEdit())
 
         projectVM.refreshEditMode()
     }
@@ -453,23 +477,26 @@ page_loads["projectpage"] = () => {
         setupData()
         projectVM.project = project
 
-        setEditMode(false)
+        setEditMode(0)
     }
     
     function saveChanges(){
         updateProject()
             .then(() => loadProject())
             .then(() => {
-                setEditMode(false)
+                setEditMode(0)
             })
     }
     
-    edit_button.addEventListener('click', () => setEditMode(true))
+    edit_button.addEventListener('click', () => setEditMode(1))
     cancel_button.addEventListener('click', () => cancelChanges())
     save_button.addEventListener('click', () => saveChanges())
+
+    checkbox_cancel_button.addEventListener('click', () => cancelChanges())
+    checkbox_confirm_button.addEventListener('click', () => saveChanges())
     //#endregion
 
     loadProject()
-    setEditMode(false)
+    setEditMode(0)
     floating_button.classList.remove('hide')
 }
