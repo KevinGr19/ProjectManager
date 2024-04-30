@@ -22,6 +22,14 @@ page_loads["projectpage"] = () => {
     
     async function updateProject(){
         project.modifiedAt = new Date()
+        project.tasks = project.tasks.filter(t => !t.markedRemove)
+        project.tasks.forEach((t,i) => {
+            t.id = i+1
+            t.subtasks = t.subtasks.filter(st => !st.markedRemove)
+            t.subtasks.forEach((st, j) => {
+                st.id = `${t.id}.${j+1}`
+            })
+        })
     }
 
     async function loadProject(){
@@ -99,16 +107,14 @@ page_loads["projectpage"] = () => {
             this.t_modified.innerText = dateToText(this.project.modifiedAt)
         }
 
-        updateTaskCounter(){
-            this.t_taskCounter.innerText = `${this.project.tasks.length} tâches`
-        }
+        updateTaskVisuals(){
+            let doneTasks = this.project.getDoneTasks()
+            this.t_taskCounter.innerText = `${doneTasks}/${this.project.tasks.length} tâches`
 
-        updateTaskProgressBar(){
-            let ratio = this.project.getRatio()
-            if(ratio === null)
+            if(!this.project.tasks.length)
                 this.d_progressBar.classList.add('hide')
             else {
-                ratio *= 100
+                let ratio = doneTasks/this.project.tasks.length*100
                 this.d_progressBar.classList.remove('hide')
                 this.d_progressFill.style.width = `${ratio}%`
                 this.t_progressBar.innerText = `${Math.round(ratio)}%`
@@ -131,8 +137,7 @@ page_loads["projectpage"] = () => {
             this.updateTitle()
             this.updateDescription()
             this.updateDates()
-            this.updateTaskCounter()
-            this.updateTaskProgressBar()
+            this.updateTaskVisuals()
             this.updateTasks()
             this.updateTags()
         }
@@ -180,8 +185,8 @@ page_loads["projectpage"] = () => {
             let vm = this.addTask(newTask)
             vm.root.classList.add('added')
 
-            this.updateTaskCounter()
-            this.updateTaskProgressBar()
+            this.updateTaskVisuals()
+            vm.i_name.select()
         }
 
         refreshLightbox(){
@@ -205,6 +210,11 @@ page_loads["projectpage"] = () => {
             this.t_name = this.header.create('p.enonce')
             this.i_checkbox = this.header.create('input[type="checkbox"].checkbox')
             this.t_date = this.root.create('p.date')
+
+            this.root.addEventListener('contextmenu', e => {
+                e.preventDefault()
+                this.openContextMenu(e)
+            })
 
             this.setupBindingTo()
             this.refreshEditMode()
@@ -233,6 +243,7 @@ page_loads["projectpage"] = () => {
         setupBindingFrom(){
             this.task.watcher.listen('finished', 'vm', () => this.updateFinished())
             this.task.watcher.listen('name', 'vm', () => this.updateName())
+            this.task.watcher.listen('markedRemove', 'vm', () => this.updateRemoveOutline())
         }
 
         updateId(){
@@ -251,10 +262,15 @@ page_loads["projectpage"] = () => {
             this.t_date.innerText = `Fini le ${dateToText(this.task.finishedAt)}`
         }
 
+        updateRemoveOutline(){
+            this.root.classList.toggle('removed', this.task.markedRemove == true)
+        }
+
         updateAll(){
             this.updateId()
             this.updateName()
             this.updateFinished()
+            this.updateRemoveOutline()
         }
         //#endregion
 
@@ -262,6 +278,18 @@ page_loads["projectpage"] = () => {
             this.i_name.toggleAttribute('readonly', !isHardEdit())
             this.i_name.classList.toggle('hide', !isHardEdit())
             this.t_name.classList.toggle('hide', isHardEdit())
+        }
+
+        openContextMenu(e){
+            openContextMenu(e.clientX, e.clientY, [
+                {
+                    label: this.task.markedRemove ? "Annuler la suppression" : "Supprimer",
+                    action: () => {
+                        this.task.markedRemove = !this.task.markedRemove
+                        if(this.task.markedRemove) setEditMode(1)
+                    }
+                }
+            ])
         }
 
     }
@@ -340,6 +368,7 @@ page_loads["projectpage"] = () => {
 
         setupBindingFrom(){
             this.task.watcher.listen('finished', 'lb-vm', () => this.updateFinished())
+            this.task.watcher.listen('subtasks', 'lb-vm', () => this.updateSubTaskVisuals())
         }
 
         removeBinding(){
@@ -369,8 +398,9 @@ page_loads["projectpage"] = () => {
             this.t_date.innerText = `Fini le ${dateToText(this.task.finishedAt)}`
         }
 
-        updateSubTaskCounter(){
-            this.t_taskCounter.innerText = `(${this.task.subtasks.length})`
+        updateSubTaskVisuals(){
+            let doneSubTasks = this.task.getDoneSubtasks()
+            this.t_taskCounter.innerText = `(${doneSubTasks}/${this.task.subtasks.length})`
         }
 
         updateSubTasks(){
@@ -385,7 +415,7 @@ page_loads["projectpage"] = () => {
             this.updateDescription()
             this.updateDates()
             this.updateFinished()
-            this.updateSubTaskCounter()
+            this.updateSubTaskVisuals()
             this.updateSubTasks()
         }
         //#endregion
@@ -408,7 +438,8 @@ page_loads["projectpage"] = () => {
             vm.root.classList.add('added')
 
             this.task.watcher.trigger('subtasks')
-            this.updateSubTaskCounter()
+            this.updateSubTaskVisuals()
+            vm.i_name.select()
         }
 
         refreshEditMode(){
@@ -457,7 +488,7 @@ page_loads["projectpage"] = () => {
     function listenTaskCheckbox(task){
         task.watcher.listen('finished', 'change_listener', _ => {
             setEditMode(2)
-            if(task instanceof Task) projectVM.updateTaskProgressBar()
+            if(task instanceof Task) projectVM.updateTaskVisuals()
         })
     }
     

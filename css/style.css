@@ -4,6 +4,7 @@
     --ter-bg: white;
 
     --border: black;
+    --soft-border: #aaa;
     --shadow: #0008;
 
     --button: black;
@@ -119,6 +120,52 @@ article{
 
 .lightbox{
     display: none;
+}
+
+#contextmenu{
+    z-index: 2;
+    position: fixed;
+
+    top: 600px; left: 1000px;
+    background: var(--ter-bg);
+    border: solid 1px var(--border);
+
+    box-shadow: 5px 5px 5px var(--shadow);
+}
+
+#contextmenu li{
+    position: relative;
+    padding: 8px;
+    list-style: none;
+
+    user-select: none;
+    cursor: pointer;
+
+    text-wrap: nowrap;
+}
+
+#contextmenu li:hover{
+    background: var(--sec-bg);
+}
+
+#contextmenu li:active{
+    background: dodgerblue;
+    color: white;
+}
+
+#contextmenu li:not(:first-child){
+    margin-top: 1px;
+}
+
+#contextmenu li:not(:first-child)::before{
+    border-top: solid 1px var(--soft-border);
+    content: '';
+
+    width: calc(100% - 10px);
+    position: absolute;
+
+    top: -1px;
+    left: 5px;
 }
 
 #container{

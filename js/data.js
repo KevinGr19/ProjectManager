@@ -57,9 +57,8 @@ class Project{
         this.tags = []
     }
 
-    getRatio(){
-        if(!this.tasks) return null;
-        return this.tasks.reduce((p,c) => c.finished ? p+1 : p, 0)/this.tasks.length
+    getDoneTasks(){
+        return this.tasks.reduce((p,c) => c.finished ? p+1 : p, 0)
     }
 
     clone(){

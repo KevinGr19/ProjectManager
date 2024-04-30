@@ -60,6 +60,30 @@ function closeLightbox(){
 closeButton(lightbox.parentNode, closeLightbox, '15px')
 //#endregion
 
+//#region Context menu
+const customContextMenu = document.querySelector("#contextmenu")
+
+function openContextMenu(x, y, actions){
+    customContextMenu.innerHTML = ''
+    actions.forEach(({label, action}) => {
+        let button = customContextMenu.create('li')
+        button.innerText = label
+        button.addEventListener('click', () => action())
+    })
+
+    customContextMenu.style.left = x + "px"
+    customContextMenu.style.top = y + "px"
+    customContextMenu.classList.remove('hide')
+}
+
+function closeContextMenu(){
+    customContextMenu.classList.add('hide')
+    customContextMenu.innerHTML = ''
+}
+
+document.addEventListener('click', () => closeContextMenu())
+//#endregion
+
 setTimeout(() => {
     navigateTo("projectpage")
     //showLightbox()
