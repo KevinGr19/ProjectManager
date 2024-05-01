@@ -86,7 +86,10 @@ class Tag{
     toHTML(){
         let element = document.createElement('div')
         element.classList.add('etiquette')
-        element.innerText = this.name
+        
+        let text = element.create('p')
+        text.innerText = this.name
+
         element.style.backgroundColor = this.color
         return element
     }

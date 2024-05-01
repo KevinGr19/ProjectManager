@@ -312,6 +312,7 @@ page_loads["projectpage"] = () => {
         }
 
         openContextMenu(e){
+            if(isSoftEdit()) return // Pas de suppression en Soft Edit
             openContextMenu(e.clientX, e.clientY, [
                 {
                     label: this.task.markedRemove ? "Annuler la suppression" : "Supprimer",
@@ -491,8 +492,6 @@ page_loads["projectpage"] = () => {
 
             let taskVM = this.addSubTask(newSubTask)
             taskVM.root.classList.add('added')
-
-            
 
             this.task.watcher.trigger('subtasks')
             this.updateSubTaskVisuals()
