@@ -66,6 +66,16 @@ page_loads["projectpage"] = () => {
                 if(isHardEdit()) this.createNewTask()
             })
 
+            this.d_tasks.addEventListener('dragover', e => {
+                let draggedVM = this.tasksVM.find(vm => vm.dragged)
+                if(!draggedVM) return
+                e.preventDefault()
+
+                let after = getElementAfterDragged(this.d_tasks, e.clientY)
+                if(after) this.d_tasks.insertBefore(draggedVM.root, after)
+                else this.d_tasks.appendChild(draggedVM.root)
+            })
+
             this.tasksVM = []
             this.lightboxTaskVM = null
 
@@ -171,6 +181,20 @@ page_loads["projectpage"] = () => {
             let taskVM = new TaskVM(this.d_tasks)
             taskVM.task = task
 
+            taskVM.dragged = false
+            taskVM.root.addEventListener('dragstart', e => {
+                taskVM.dragged = true
+                taskVM.root.classList.add("dragging")
+            })
+
+            taskVM.root.addEventListener('dragend', e => {
+                this.tasksVM = [...this.d_tasks.children].map(r => r.vm).filter(vm => vm)
+                this.project.tasks = this.tasksVM.map(vm => vm.task)
+
+                taskVM.dragged = false
+                taskVM.root.classList.remove("dragging")
+            })
+
             this.tasksVM.push(taskVM)
             return taskVM
         }
@@ -204,6 +228,8 @@ page_loads["projectpage"] = () => {
 
         constructor(root){
             this.root = root.create('div.tache')
+            this.root.vm = this
+
             this.header = this.root.create('div.tache_header')
             this.t_id = this.header.create('p.numero')
             this.i_name = this.header.create('input[type="text"].enonce')
@@ -215,6 +241,9 @@ page_loads["projectpage"] = () => {
                 e.preventDefault()
                 this.openContextMenu(e)
             })
+
+            setUndraggable(this.i_name)
+            setUndraggable(this.i_checkbox)
 
             this.setupBindingTo()
             this.refreshEditMode()
@@ -275,6 +304,8 @@ page_loads["projectpage"] = () => {
         //#endregion
 
         refreshEditMode(){
+            this.root.setAttribute('draggable', isHardEdit())
+
             this.i_name.toggleAttribute('readonly', !isHardEdit())
             this.i_name.classList.toggle('hide', !isHardEdit())
             this.t_name.classList.toggle('hide', isHardEdit())
@@ -342,6 +373,16 @@ page_loads["projectpage"] = () => {
 
             this.b_addSubTask.addEventListener('click', () => {
                 if(isHardEdit()) this.createNewSubTask()
+            })
+
+            this.d_tasks.addEventListener('dragover', e => {
+                let draggedVM = this.subtasksVM.find(vm => vm.dragged)
+                if(!draggedVM) return
+                e.preventDefault()
+
+                let after = getElementAfterDragged(this.d_tasks, e.clientY)
+                if(after) this.d_tasks.insertBefore(draggedVM.root, after)
+                else this.d_tasks.appendChild(draggedVM.root)
             })
 
             this.subtasksVM = []
@@ -423,6 +464,20 @@ page_loads["projectpage"] = () => {
         addSubTask(subTask){
             let subTaskVM = new SubTaskVM(this.d_tasks)
             subTaskVM.task = subTask
+
+            subTaskVM.root.addEventListener('dragstart', e => {
+                subTaskVM.dragged = true
+                subTaskVM.root.classList.add("dragging")
+            })
+
+            subTaskVM.root.addEventListener('dragend', e => {
+                this.subtasksVM = [...this.d_tasks.children].map(r => r.vm).filter(vm => vm)
+                this.task.subtasks = this.subtasksVM.map(vm => vm.task)
+                
+                subTaskVM.dragged = false
+                subTaskVM.root.classList.remove("dragging")
+            })
+
             this.subtasksVM.push(subTaskVM)
             return subTaskVM
         }
@@ -434,12 +489,14 @@ page_loads["projectpage"] = () => {
             newSubTask.id = `${this.task.id}.${this.task.subtasks.length}`
             newSubTask.name = `Sous-tâche ${newSubTask.id}`
 
-            let vm = this.addSubTask(newSubTask)
-            vm.root.classList.add('added')
+            let taskVM = this.addSubTask(newSubTask)
+            taskVM.root.classList.add('added')
+
+            
 
             this.task.watcher.trigger('subtasks')
             this.updateSubTaskVisuals()
-            vm.i_name.select()
+            taskVM.i_name.select()
         }
 
         refreshEditMode(){

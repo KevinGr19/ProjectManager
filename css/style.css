@@ -396,3 +396,7 @@ article{
 .removed{
     border: solid 2px red !important;
 }
+
+.dragging{
+    opacity: 0.5;
+}

@@ -68,3 +68,21 @@ function arrayCompare(col1, col2, func){
 	for(let i in col1) if(!func(col1[i], col2[i])) return false
 	return true
 }
+
+function getElementAfterDragged(container, y){
+	for(let child of container.children){
+		if(child.classList.contains('dragging')) continue
+		let box = child.getBoundingClientRect()
+
+		if(y < box.top + box.height/2) return child
+	}
+	return null
+}
+
+function setUndraggable(element){
+	element.setAttribute('draggable', true)
+	element.addEventListener('dragstart', e => {
+		e.preventDefault()
+		e.stopPropagation()
+	})
+}
