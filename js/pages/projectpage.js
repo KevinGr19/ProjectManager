@@ -3,6 +3,7 @@ page_loads["projectpage"] = () => {
     //#region Data
     let original_project = null
     let project = null
+    let tags = null
 
     function setupData(){
         project = original_project.clone()
@@ -34,7 +35,9 @@ page_loads["projectpage"] = () => {
 
     async function loadProject(){
         if(project) original_project = project.clone()
-        else original_project = generateFakeProject()
+        else original_project = await getProject()
+
+        tags = await getTags()
 
         setupData()
         projectVM.project = project
@@ -57,14 +60,19 @@ page_loads["projectpage"] = () => {
             this.t_taskCounter = root.querySelector("#taches-compteur")
             this.b_addTask = root.querySelector("#taches-ajout")
             this.d_tags = root.querySelector("#etiquettes-projet")
+            this.b_manageTags = root.querySelector("#manage-tags")
             this.d_progressBar = root.querySelector("#progressbar")
             this.t_progressBar = root.querySelector("#text-progressbar")
             this.d_progressFill = this.d_progressBar.querySelector("span")
             this.d_tasks = root.querySelector("#taches-projet")
 
+            this.t_noTags = this.d_tags.create('p>Aucune')
+
             this.b_addTask.addEventListener('click', () => {
                 if(isHardEdit()) this.createNewTask()
             })
+
+            this.b_manageTags.addEventListener('click', () => this.openTags())
 
             this.d_tasks.addEventListener('dragover', e => {
                 let draggedVM = this.tasksVM.find(vm => vm.dragged)
@@ -77,7 +85,10 @@ page_loads["projectpage"] = () => {
             })
 
             this.tasksVM = []
+            this.tagsVM = {}
+
             this.lightboxTaskVM = null
+            this.lightboxTagsVM = null
 
             this.setupBindingTo()
         }
@@ -90,7 +101,8 @@ page_loads["projectpage"] = () => {
             this.#project = value
             this.setupBindingFrom()
             this.updateAll()
-            this.refreshLightbox()
+            this.refreshTaskLightbox()
+            this.refreshTagsLightbox()
         }
 
         //#region Binding
@@ -102,6 +114,7 @@ page_loads["projectpage"] = () => {
         setupBindingFrom(){
             this.project.watcher.listen('title', 'vm', () => this.updateTitle())
             this.project.watcher.listen('description', 'vm', () => this.updateDescription())
+            this.project.watcher.listen('tags', 'vm', () => this.updateTags())
         }
 
         updateTitle(){
@@ -139,8 +152,24 @@ page_loads["projectpage"] = () => {
         }
 
         updateTags(){
-            this.d_tags.innerHTML = ''
-            this.project.tags.forEach(tag => this.d_tags.appendChild(tag.toHTML()))
+            Object.values(this.tagsVM).forEach(vm => {
+                if(!this.project.tags.has(vm.tagId)){
+                    vm.root.remove()
+                    delete this.tagsVM[vm.tagId]
+                }
+            })
+
+            this.project.tags.forEach(id => {
+                if(!this.tagsVM[id]){
+                    this.tagsVM[id] = new TagVM(this.d_tags)
+                    this.tagsVM[id].tagId = id
+                }
+                else this.d_tags.appendChild(this.tagsVM[id].root)
+
+                this.tagsVM[id].update()
+            })
+
+            this.t_noTags.classList.toggle('hide', Object.values(this.tagsVM).length)
         }
 
         updateAll(){
@@ -157,9 +186,12 @@ page_loads["projectpage"] = () => {
             this.i_title.toggleAttribute('readonly', !isHardEdit())
             this.i_description.toggleAttribute('readonly', !isHardEdit())
             this.b_addTask.classList.toggle('hide', !isHardEdit())
+            this.b_manageTags.classList.toggle('hide', !isHardEdit())
 
             this.tasksVM.forEach(vm => vm.refreshEditMode())
+
             this.lightboxTaskVM?.refreshEditMode()
+            if(this.lightboxTagsVM) closeLightbox()
         }
 
         openTask(task){
@@ -213,12 +245,33 @@ page_loads["projectpage"] = () => {
             vm.i_name.select()
         }
 
-        refreshLightbox(){
+        refreshTaskLightbox(){
             if(!this.lightboxTaskVM) return
 
             let task = this.project.tasks.find(t => t.id == this.lightboxTaskVM.task.id)
             if(task) this.lightboxTaskVM.task = task
             else closeLightbox()
+        }
+
+        openTags(){
+            if(!isHardEdit()) return
+
+            if(!this.lightboxTagsVM){
+                loadLightbox("tag-lightbox", {
+                    onClose: () => {
+                        this.lightboxTagsVM.removeBinding()
+                        this.lightboxTagsVM = null
+                    }
+                })
+                this.lightboxTagsVM = new TagsLightboxVM(lightbox)
+            }
+            
+            this.lightboxTagsVM.project = this.project
+        }
+
+        refreshTagsLightbox(){
+            if(!this.lightboxTagsVM) return
+            this.lightboxTagsVM.project = this.project
         }
     }
 
@@ -520,6 +573,108 @@ page_loads["projectpage"] = () => {
             this.task.watcher.listen('finished', 'subtask-vm', () => this.task.task.watcher.trigger('subtasks'))
         }
         //#endregion
+
+    }
+
+    class TagVM{
+
+        #tagId = null
+
+        constructor(root){
+            this.root = root.create('div.etiquette')
+            this.t_name = this.root.create('p')
+        }
+
+        get tagId(){
+            return this.#tagId
+        }
+
+        set tagId(value){
+            this.#tagId = value
+        }
+
+        get tag(){
+            return tags[this.tagId]
+        }
+
+        update(){
+            this.root.style.backgroundColor = this.tag.color
+            this.t_name.innerText = this.tag.name
+        }
+
+    }
+
+    class TagsLightboxVM{
+
+        #project = null
+
+        constructor(root){
+            this.root = root
+
+            this.d_projectTags = this.root.querySelector("#lb-project-tags")
+            this.d_otherTags = this.root.querySelector("#lb-other-tags")
+
+            this.tagsVM = {}
+
+            this.setupBindingTo()
+        }
+
+        get project(){
+            return this.#project
+        }
+
+        set project(value){
+            this.#project = value
+            this.setupBindingFrom()
+            this.updateAll()
+        }
+
+        //#region Binding
+        setupBindingTo(){
+
+        }
+
+        setupBindingFrom(){
+            this.project.watcher.listen('tags', 'lb-vm', () => this.updateAll())
+        }
+
+        removeBinding(){
+            this.project.watcher.removeListeners('lb-vm')
+        }
+
+        updateAll(){
+            Object.values(this.tagsVM).forEach(tagVM => {
+                if(!this.project.tags.has(tagVM.tagId)){
+                    tagVM.root.remove()
+                    delete this.tagsVM[tagVM.tagId]
+                }
+            })
+
+            Object.values(tags).forEach(tag => this.updateTag(tag.id))
+        }
+        //#endregion
+
+        updateTag(id){
+            if(!this.tagsVM[id]){
+                let tagVM = new TagVM(this.d_otherTags)
+                this.tagsVM[id] = tagVM
+                tagVM.tagId = id
+                tagVM.root.classList.add('clickable')
+                tagVM.root.addEventListener('click', () => this.swapTag(tagVM.tagId))
+            }
+
+            let newRoot = this.project.tags.has(id) ? this.d_projectTags : this.d_otherTags
+            newRoot.appendChild(this.tagsVM[id].root)
+
+            this.tagsVM[id].update()
+        }
+
+        swapTag(id){
+            if(this.project.tags.has(id)) this.project.tags.delete(id)
+            else this.project.tags.add(id)
+
+            this.project.watcher.trigger('tags')
+        }
 
     }
     //#endregion

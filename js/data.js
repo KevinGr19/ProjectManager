@@ -54,7 +54,7 @@ class Project{
         this.modifiedAt = null
         this.images = []
         this.tasks = []
-        this.tags = []
+        this.tags = new Set()
     }
 
     getDoneTasks(){
@@ -62,6 +62,7 @@ class Project{
     }
 
     clone(){
+        // TODO
         let newProject = new Project()
         newProject.title =  this.title
         newProject.description =  this.description
@@ -69,7 +70,7 @@ class Project{
         newProject.modifiedAt =  this.modifiedAt
         newProject.images = [...this.images]
         newProject.tasks = this.tasks.map(t => t.clone())
-        newProject.tags = this.tags.map(t => t.clone())
+        newProject.tags = new Set(this.tags)
 
         return newProject
     }
@@ -78,24 +79,10 @@ class Project{
 
 class Tag{
 
-    constructor(name, color){
-        this.name = name ?? ""
-        this.color = color ?? ""
-    }
-
-    toHTML(){
-        let element = document.createElement('div')
-        element.classList.add('etiquette')
-        
-        let text = element.create('p')
-        text.innerText = this.name
-
-        element.style.backgroundColor = this.color
-        return element
-    }
-
-    clone(){
-        return new Tag(this.name, this.color)
+    constructor(id, name, color){
+        this.id = id
+        this.name = name
+        this.color = color
     }
 
 }
@@ -193,7 +180,30 @@ class SubTask extends AbstractTask{
 }
 //#endregion
 
-function generateFakeProject(){
+let fake_tags = {
+    1:new Tag(1, "Unity", "black"),
+    2:new Tag(2, "C#", "green"),
+    3:new Tag(3, "Networking", "dodgerblue"),
+    4:new Tag(4, "Maths", "darkorange"),
+}
+
+async function createTag(name, color){
+    let id = Object.keys(fake_tags).length
+    let newTag = new Tag(id, name, color)
+    fake_tags[id] = newTag
+    return newTag
+}
+
+async function editTag(id, name, color){
+    fake_tags[id] = new Tag(id, name, color)
+    return fake_tags[id]
+}
+
+async function getTags(){
+    return fake_tags
+}
+
+async function getProject(){
     let project = new Project()
     project.title = "FPS Multijoueur Unity"
     project.description = "Ceci est la description du projet Unity.\nUne deuxième ligne ici."
@@ -203,10 +213,9 @@ function generateFakeProject(){
     project.images.push("https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png")
 
     // Fake tags
-    project.tags.push(new Tag("Unity", "black"))
-    project.tags.push(new Tag("C#", "green"))
-    project.tags.push(new Tag("Networking", "dodgerblue"))
-    project.tags.push(new Tag("Maths", "darkorange"))
+    project.tags.add(1)
+    project.tags.add(2)
+    project.tags.add(3)
 
     // Fake tasks
     let task = new Task(project)

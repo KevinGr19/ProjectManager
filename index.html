@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/utils.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <title>Project Manager</title>
 </head>
 <body>
@@ -26,7 +27,7 @@
                     <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling">
                 </div>
                 <p class="title">Création d'un moteur de rendu 3D</p>
-                <div class="etiquettes">
+                <div class="etiquettes c">
                     <div class="etiquette" style="background: darkcyan;">C++</div>
                     <div class="etiquette" style="background: darkmagenta;">OpenGL</div>
                     <div class="etiquette" style="background: darkorange;">Maths</div>
@@ -38,7 +39,7 @@
                     <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
                 </div>
                 <p class="title">FPS Multijoueur Unity</p>
-                <div class="etiquettes">
+                <div class="etiquettes c">
                     <div class="etiquette" style="background: black;">Unity</div>
                     <div class="etiquette" style="background: green;">C#</div>
                     <div class="etiquette" style="background: dodgerblue;">Networking</div>
@@ -57,9 +58,12 @@
                         <label for="titre-projet">Titre du projet</label>
                     </div>
                     <div class="labelbox" style="flex: 1;">
-                        <div id="etiquettes-projet" class="etiquettes" style="justify-content: start;">
+                        <div id="etiquettes-projet" class="etiquettes">
                         </div>
-                        <label>Étiquettes</label>
+                        <label class="row sgap">
+                            <p>Étiquettes</p>
+                            <p class="link hide" id="manage-tags">Gérer</p>
+                        </label>
                     </div>
                 </div>
                 <div class="labelbox">
@@ -175,7 +179,27 @@
         </div>
     </div>
 
-    <div id="contextmenu" class="hide">
+    <div class="lightbox" id="tag-lightbox">
+        <div class="column bmar" style="height: 500px;">
+            <h2 id="lb-tag-title">Gérer les étiquettes</h2>
+            <div style="flex: 1; min-height: 0;">
+                <div class="sectionrow smar" style="height: 100%;">
+                    <div class="column">
+                        <p>Etiquettes du projet</p>
+                        <div class="scrollv etiquettes" style="flex: 1;" id="lb-project-tags">
+                        </div>
+                    </div>
+                    <div class="column" style="height: 100%;">
+                        <p>Etiquettes restantes</p>
+                        <div class="scrollv etiquettes" style="flex: 1;" id="lb-other-tags">    
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="contextmenu" class="popup hide">
     </div>
 
     <script src="js/utils.js" defer></script>

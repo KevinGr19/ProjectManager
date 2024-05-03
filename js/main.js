@@ -39,11 +39,11 @@ document.querySelectorAll(".lightbox").forEach(l => {
     l.remove()
 })
 
-function loadLightbox(id, {onClose}){
+function loadLightbox(id, options){
     overlay.classList.add('show')
 
     if(lightboxCloseAction) lightboxCloseAction()
-    lightboxCloseAction = onClose
+    lightboxCloseAction = options?.onClose
 
     lightbox.innerHTML = lightboxes[id]
 }
@@ -66,7 +66,7 @@ const customContextMenu = document.querySelector("#contextmenu")
 function openContextMenu(x, y, actions){
     customContextMenu.innerHTML = ''
     actions.forEach(({label, action}) => {
-        let button = customContextMenu.create('li')
+        let button = customContextMenu.create('li.option')
         button.innerText = label
         button.addEventListener('click', () => action())
     })
@@ -81,7 +81,7 @@ function closeContextMenu(){
     customContextMenu.innerHTML = ''
 }
 
-document.addEventListener('click', () => closeContextMenu())
+document.addEventListener('click', (e) => closeContextMenu())
 //#endregion
 
 setTimeout(() => {

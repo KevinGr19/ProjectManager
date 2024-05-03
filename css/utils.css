@@ -16,6 +16,8 @@
 .mmar{margin: 10px;}
 .bmar{margin: 25px;}
 
+.spad{padding: 5px;}
+
 .fw{width: 100%;}
 
 .c{justify-content: center;}
@@ -56,6 +58,16 @@
 .novpad{padding-top: 0 !important; padding-bottom: 0 !important;}
 .nohpad{padding-left: 0; padding-right: 0;}
 .nopad{padding: 0;}
+
+.scrollv{
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.clickable{
+    cursor: pointer;
+    user-select: none;
+}
 
 /* #region Carousel */
 carousel{
