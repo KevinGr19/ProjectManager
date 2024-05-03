@@ -650,7 +650,10 @@ page_loads["projectpage"] = () => {
                 }
             })
 
-            Object.values(tags).forEach(tag => this.updateTag(tag.id))
+            Object.values(tags).forEach(tag => {
+                if(!this.project.tags.has(tag.id)) this.updateTag(tag.id)
+            })
+            this.project.tags.forEach(id => this.updateTag(id))
         }
         //#endregion
 
