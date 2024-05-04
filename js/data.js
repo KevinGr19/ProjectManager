@@ -75,6 +75,31 @@ class Project{
         return newProject
     }
 
+    toJSON(){
+        return {
+            title: this.title,
+            description: this.description,
+            createdAt: this.createdAt,
+            modifiedAt: this.modifiedAt,
+            images: this.images,
+            tasks: this.tasks.map(t => t.toJSON()),
+            tags: this.tags,
+        }
+    }
+
+    static fromJSON(json){
+        let project = new Project()
+        project.title = json.title
+        project.description = json.description
+        project.createdAt = json.createdAt
+        project.modifiedAt = json.modifiedAt
+        project.images = [...json.images]
+        project.tags = new Set(json.tags)
+        project.tasks = json.tasks.map(tJson => Task.fromJSON(tJson, project))
+
+        return project
+    }
+
 }
 
 class Tag{
@@ -156,6 +181,33 @@ class Task extends AbstractTask{
             || this.description != oldTask.description
     }
 
+    toJSON(){
+        return {
+            id: this.id,
+            name: this.name,
+            createdAt: this.createdAt,
+            modifiedAt: this.modifiedAt,
+            finished: this.finished,
+            finishedAt: this.finishedAt,
+            description: this.description,
+            subtasks: this.subtasks.map(t => t.toJSON()),
+        }
+    }
+
+    static fromJSON(json, project){
+        let task = new Task(project)
+        task.id = json.id
+        task.name = json.name
+        task.description = json.description
+        task.createdAt = json.createdAt
+        task.modifiedAt = json.modifiedAt
+        task.finished = json.finished
+        task.finishedAt = json.finishedAt
+        task.subtasks = json.subtasks.map(tJson => SubTask.fromJSON(tJson, task))
+
+        return task
+    }
+
 }
 
 class SubTask extends AbstractTask{
@@ -177,90 +229,113 @@ class SubTask extends AbstractTask{
         return newTask
     }
 
+    toJSON(){
+        return {
+            id: this.id,
+            name: this.name,
+            createdAt: this.createdAt,
+            modifiedAt: this.modifiedAt,
+            finished: this.finished,
+            finishedAt: this.finishedAt,
+        }
+    }
+
+    static fromJSON(json, task){
+        let subtask = new SubTask(task)
+        subtask.id = json.id
+        subtask.name = json.name
+        subtask.createdAt = json.createdAt
+        subtask.modifiedAt = json.modifiedAt
+        subtask.finished = json.finished
+        subtask.finishedAt = json.finishedAt
+
+        return subtask
+    }
+
 }
 //#endregion
 
-let fake_tags = {
-    1:new Tag(1, "Unity", "black"),
-    2:new Tag(2, "C#", "green"),
-    3:new Tag(3, "Networking", "dodgerblue"),
-    4:new Tag(4, "Maths", "darkorange"),
-}
+// let fake_tags = {
+//     1:new Tag(1, "Unity", "black"),
+//     2:new Tag(2, "C#", "green"),
+//     3:new Tag(3, "Networking", "dodgerblue"),
+//     4:new Tag(4, "Maths", "darkorange"),
+// }
 
-async function createTag(name, color){
-    let id = Object.keys(fake_tags).length
-    let newTag = new Tag(id, name, color)
-    fake_tags[id] = newTag
-    return newTag
-}
+// async function createTag(name, color){
+//     let id = Object.keys(fake_tags).length
+//     let newTag = new Tag(id, name, color)
+//     fake_tags[id] = newTag
+//     return newTag
+// }
 
-async function editTag(id, name, color){
-    fake_tags[id] = new Tag(id, name, color)
-    return fake_tags[id]
-}
+// async function editTag(id, name, color){
+//     fake_tags[id] = new Tag(id, name, color)
+//     return fake_tags[id]
+// }
 
-async function getTags(){
-    return fake_tags
-}
+// async function getTags(){
+//     return fake_tags
+// }
 
-async function getProject(){
-    let project = new Project()
-    project.title = "FPS Multijoueur Unity"
-    project.description = "Ceci est la description du projet Unity.\nUne deuxième ligne ici."
-    project.createdAt = new Date(2024, 3, 25, 16, 34)
-    project.modifiedAt = new Date(2024, 3, 27, 10, 34)
-    project.images.push("https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi")
-    project.images.push("https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png")
+// async function getProject(){
+//     let project = new Project()
+//     project.title = "FPS Multijoueur Unity"
+//     project.description = "Ceci est la description du projet Unity.\nUne deuxième ligne ici."
+//     project.createdAt = new Date(2024, 3, 25, 16, 34)
+//     project.modifiedAt = new Date(2024, 3, 27, 10, 34)
+//     project.images.push("https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi")
+//     project.images.push("https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png")
 
-    // Fake tags
-    project.tags.add(1)
-    project.tags.add(2)
-    project.tags.add(3)
+//     // Fake tags
+//     project.tags.add(1)
+//     project.tags.add(2)
+//     project.tags.add(3)
 
-    // Fake tasks
-    let task = new Task(project)
-    task.id = 1
-    task.name = "Créer le projet Unity"
-    task.description = "Description 1"
-    task.createdAt = new Date(2024, 3, 25, 17, 10)
-    task.modifiedAt = new Date(2024, 3, 28, 10, 3)
-    task.finished = true
-    task.finishedAt = new Date(2024, 3, 28, 11, 2)
-    project.tasks.push(task)
+//     // Fake tasks
+//     let task = new Task(project)
+//     task.id = 1
+//     task.name = "Créer le projet Unity"
+//     task.description = "Description 1"
+//     task.createdAt = new Date(2024, 3, 25, 17, 10)
+//     task.modifiedAt = new Date(2024, 3, 28, 10, 3)
+//     task.finished = true
+//     task.finishedAt = new Date(2024, 3, 28, 11, 2)
+//     project.tasks.push(task)
 
-    let subtask = new SubTask(task)
-    subtask.id = "1.1"
-    subtask.name = "Installer Unity (dernière version)"
-    subtask.createdAt = new Date(2024, 3, 25, 17, 10)
-    subtask.modifiedAt = new Date(2024, 3, 28, 10, 3)
-    subtask.finished = true
-    task.subtasks.push(subtask)
+//     let subtask = new SubTask(task)
+//     subtask.id = "1.1"
+//     subtask.name = "Installer Unity (dernière version)"
+//     subtask.createdAt = new Date(2024, 3, 25, 17, 10)
+//     subtask.modifiedAt = new Date(2024, 3, 28, 10, 3)
+//     subtask.finished = true
+//     task.subtasks.push(subtask)
 
-    subtask = new SubTask(task)
-    subtask.id = "1.2"
-    subtask.name = "Créer le projet"
-    subtask.createdAt = new Date(2024, 3, 25, 17, 12)
-    subtask.modifiedAt = new Date(2024, 3, 28, 10, 5)
-    subtask.finished = true
-    task.subtasks.push(subtask)
+//     subtask = new SubTask(task)
+//     subtask.id = "1.2"
+//     subtask.name = "Créer le projet"
+//     subtask.createdAt = new Date(2024, 3, 25, 17, 12)
+//     subtask.modifiedAt = new Date(2024, 3, 28, 10, 5)
+//     subtask.finished = true
+//     task.subtasks.push(subtask)
 
-    task = new Task(project)
-    task.id = 2
-    task.name = "Modéliser et animer les personnages et ennemis"
-    task.description = "Description 2"
-    task.createdAt = new Date(2024, 3, 26, 12, 10)
-    task.modifiedAt = new Date(2024, 3, 28, 9, 5)
-    task.finished = false
-    project.tasks.push(task)
+//     task = new Task(project)
+//     task.id = 2
+//     task.name = "Modéliser et animer les personnages et ennemis"
+//     task.description = "Description 2"
+//     task.createdAt = new Date(2024, 3, 26, 12, 10)
+//     task.modifiedAt = new Date(2024, 3, 28, 9, 5)
+//     task.finished = false
+//     project.tasks.push(task)
 
-    task = new Task(project)
-    task.id = 3
-    task.name = "Programmer le CharacterController"
-    task.description = "Description 3"
-    task.createdAt = new Date(2024, 3, 26, 12, 10)
-    task.modifiedAt = new Date(2024, 3, 28, 9, 5)
-    task.finished = false
-    project.tasks.push(task)
+//     task = new Task(project)
+//     task.id = 3
+//     task.name = "Programmer le CharacterController"
+//     task.description = "Description 3"
+//     task.createdAt = new Date(2024, 3, 26, 12, 10)
+//     task.modifiedAt = new Date(2024, 3, 28, 9, 5)
+//     task.finished = false
+//     project.tasks.push(task)
 
-    return project
-}
+//     return project
+// }

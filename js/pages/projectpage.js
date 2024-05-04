@@ -1,4 +1,4 @@
-page_loads["projectpage"] = () => {
+page_loads["projectpage"] = (args) => {
 
     //#region Data
     let original_project = null
@@ -31,12 +31,14 @@ page_loads["projectpage"] = () => {
                 st.id = `${t.id}.${j+1}`
             })
         })
+
+        let json = project.toJSON()
+        await saveProject(args.projectId, json)
     }
 
     async function loadProject(){
-        if(project) original_project = project.clone()
-        else original_project = await getProject()
-
+        let json = await getProject(args.projectId)
+        original_project = Project.fromJSON(json)
         tags = await getTags()
 
         setupData()
@@ -85,7 +87,7 @@ page_loads["projectpage"] = () => {
             })
 
             this.tasksVM = []
-            this.tagsVM = {}
+            this.tagsVM = new Map()
 
             this.lightboxTaskVM = null
             this.lightboxTagsVM = null
@@ -152,24 +154,24 @@ page_loads["projectpage"] = () => {
         }
 
         updateTags(){
-            Object.values(this.tagsVM).forEach(vm => {
+            this.tagsVM.values().forEach(vm => {
                 if(!this.project.tags.has(vm.tagId)){
                     vm.root.remove()
-                    delete this.tagsVM[vm.tagId]
+                    this.tagsVM.delete(vm.tagId)
                 }
             })
 
             this.project.tags.forEach(id => {
-                if(!this.tagsVM[id]){
-                    this.tagsVM[id] = new TagVM(this.d_tags)
-                    this.tagsVM[id].tagId = id
+                if(!this.tagsVM.has(id)){
+                    this.tagsVM.set(id, new TagVM(this.d_tags))
+                    this.tagsVM.get(id).tagId = id
                 }
-                else this.d_tags.appendChild(this.tagsVM[id].root)
+                else this.d_tags.appendChild(this.tagsVM.get(id).root)
 
-                this.tagsVM[id].update()
+                this.tagsVM.get(id).update()
             })
 
-            this.t_noTags.classList.toggle('hide', Object.values(this.tagsVM).length)
+            this.t_noTags.classList.toggle('hide', this.tagsVM.size)
         }
 
         updateAll(){
@@ -594,7 +596,7 @@ page_loads["projectpage"] = () => {
         }
 
         get tag(){
-            return tags[this.tagId]
+            return tags.get(this.tagId)
         }
 
         update(){
@@ -614,7 +616,7 @@ page_loads["projectpage"] = () => {
             this.d_projectTags = this.root.querySelector("#lb-project-tags")
             this.d_otherTags = this.root.querySelector("#lb-other-tags")
 
-            this.tagsVM = {}
+            this.tagsVM = new Map()
 
             this.setupBindingTo()
         }
@@ -643,33 +645,33 @@ page_loads["projectpage"] = () => {
         }
 
         updateAll(){
-            Object.values(this.tagsVM).forEach(tagVM => {
+            this.tagsVM.values().forEach(tagVM => {
                 if(!this.project.tags.has(tagVM.tagId)){
                     tagVM.root.remove()
-                    delete this.tagsVM[tagVM.tagId]
+                    this.tagsVM.delete(tagVM.tagId)
                 }
             })
 
-            Object.values(tags).forEach(tag => {
-                if(!this.project.tags.has(tag.id)) this.updateTag(tag.id)
+            tags.keys().forEach(id => {
+                if(!this.project.tags.has(id)) this.updateTag(id)
             })
             this.project.tags.forEach(id => this.updateTag(id))
         }
         //#endregion
 
         updateTag(id){
-            if(!this.tagsVM[id]){
+            if(!this.tagsVM.has(id)){
                 let tagVM = new TagVM(this.d_otherTags)
-                this.tagsVM[id] = tagVM
+                this.tagsVM.set(id, tagVM)
                 tagVM.tagId = id
                 tagVM.root.classList.add('clickable')
                 tagVM.root.addEventListener('click', () => this.swapTag(tagVM.tagId))
             }
 
             let newRoot = this.project.tags.has(id) ? this.d_projectTags : this.d_otherTags
-            newRoot.appendChild(this.tagsVM[id].root)
+            newRoot.appendChild(this.tagsVM.get(id).root)
 
-            this.tagsVM[id].update()
+            this.tagsVM.get(id).update()
         }
 
         swapTag(id){
@@ -740,7 +742,7 @@ page_loads["projectpage"] = () => {
     checkbox_cancel_button.addEventListener('click', () => cancelChanges())
     checkbox_confirm_button.addEventListener('click', () => saveChanges())
     //#endregion
-
+    
     loadProject()
     setEditMode(0)
     floating_button.classList.remove('hide')
