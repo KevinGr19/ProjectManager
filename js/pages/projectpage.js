@@ -23,15 +23,42 @@ page_loads["projectpage"] = (args) => {
     
     async function updateProject(){
         project.modifiedAt = new Date()
+
+        // Tasks
         project.tasks = project.tasks.filter(t => !t.markedRemove)
         project.tasks.forEach((t,i) => {
-            t.id = i+1
+            let oldTask = original_project.tasks.find(_t => _t.id == t.id)
+
+            if(!t.createdAt)
+                t.createdAt = new Date()
+
             t.subtasks = t.subtasks.filter(st => !st.markedRemove)
+            t.processChanges(oldTask)
+            t.id = i+1
+
             t.subtasks.forEach((st, j) => {
+                if(!st.createdAt)
+                    st.createdAt = new Date()
+
+                if(oldTask){
+                    let oldSubTask = oldTask.subtasks.find(_st => _st.id == st.id)
+                    st.processChanges(oldSubTask)
+
+                    if(oldSubTask && st.isModified(oldSubTask))
+                        t.modifiedAt = new Date()
+                }
+
                 st.id = `${t.id}.${j+1}`
             })
         })
 
+        // Save images
+        for(let file of project.imagesToAdd){
+            let imgId = await saveImage(file)
+            project.images.push(imgId)
+        }
+
+        // Save project
         let json = project.toJSON()
         await saveProject(args.projectId, json)
     }
@@ -67,6 +94,9 @@ page_loads["projectpage"] = (args) => {
             this.t_progressBar = root.querySelector("#text-progressbar")
             this.d_progressFill = this.d_progressBar.querySelector("span")
             this.d_tasks = root.querySelector("#taches-projet")
+            this.d_carousel = root.querySelector("carousel")
+            this.d_addImage = root.querySelector("#projet-add-image-container")
+            this.i_addImage = this.d_addImage.querySelector("input[type=file]")
 
             this.t_noTags = this.d_tags.create('p>Aucune')
 
@@ -85,6 +115,14 @@ page_loads["projectpage"] = (args) => {
                 if(after) this.d_tasks.insertBefore(draggedVM.root, after)
                 else this.d_tasks.appendChild(draggedVM.root)
             })
+
+            this.i_addImage.addEventListener('change', (e) => {
+                const files = this.i_addImage.files
+                for(let file of files)
+                    this.project.imagesToAdd.add(file)
+            })
+
+            this.carousel = new Carousel(this.d_carousel)
 
             this.tasksVM = []
             this.tagsVM = new Map()
@@ -174,6 +212,24 @@ page_loads["projectpage"] = (args) => {
             this.t_noTags.classList.toggle('hide', this.tagsVM.size)
         }
 
+        updateImages(){
+            this.carousel.clear()
+            this.project.images.forEach(token => {
+                let img = this.carousel.addBlankImage(true)
+                if(typeof token === 'string'){
+                    img.setAttribute('src', token)
+                    this.carousel.refreshIfProjected(img.carouselId)
+                }
+                else{
+                    getImageURL(token).then((res) => {
+                        if(res) img.setAttribute('src', res)
+                        this.carousel.refreshIfProjected(img.carouselId)
+                    })
+                }
+            })
+            this.carousel.refreshSelected()
+        }
+
         updateAll(){
             this.updateTitle()
             this.updateDescription()
@@ -181,6 +237,7 @@ page_loads["projectpage"] = (args) => {
             this.updateTaskVisuals()
             this.updateTasks()
             this.updateTags()
+            this.updateImages()
         }
         //#endregion
 
@@ -189,6 +246,7 @@ page_loads["projectpage"] = (args) => {
             this.i_description.toggleAttribute('readonly', !isHardEdit())
             this.b_addTask.classList.toggle('hide', !isHardEdit())
             this.b_manageTags.classList.toggle('hide', !isHardEdit())
+            this.d_addImage.classList.toggle('hide', !isHardEdit())
 
             this.tasksVM.forEach(vm => vm.refreshEditMode())
 
@@ -687,7 +745,7 @@ page_loads["projectpage"] = (args) => {
     //#region Actions
     let projectVM = new ProjectVM(container)
 
-    const floating_button = document.querySelector(".floating_button")
+    const floating_button = document.querySelector("#projet-floating-buttons")
     const edit_button = document.querySelector("#edit-button")
     const default_buttons = floating_button.querySelector("#default-buttons")
     const checkbox_buttons = floating_button.querySelector("#checkbox-buttons")
@@ -746,4 +804,5 @@ page_loads["projectpage"] = (args) => {
     loadProject()
     setEditMode(0)
     floating_button.classList.remove('hide')
+
 }

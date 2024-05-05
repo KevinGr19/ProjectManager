@@ -21,30 +21,7 @@
             <button>Rechercher</button>
         </div>
 
-        <div class="preview-cards">
-            <div class="preview-card">
-                <div class="image-mask">
-                    <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling">
-                </div>
-                <p class="title">Création d'un moteur de rendu 3D</p>
-                <div class="etiquettes c">
-                    <div class="etiquette" style="background: darkcyan;">C++</div>
-                    <div class="etiquette" style="background: darkmagenta;">OpenGL</div>
-                    <div class="etiquette" style="background: darkorange;">Maths</div>
-                </div>
-            </div>
-    
-            <div class="preview-card" onclick="navigateTo('projectpage')">
-                <div class="image-mask">
-                    <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
-                </div>
-                <p class="title">FPS Multijoueur Unity</p>
-                <div class="etiquettes c">
-                    <div class="etiquette" style="background: black;">Unity</div>
-                    <div class="etiquette" style="background: green;">C#</div>
-                    <div class="etiquette" style="background: dodgerblue;">Networking</div>
-                </div>
-            </div>
+        <div id="search-results" class="preview-cards">
         </div>
     </div>
 
@@ -81,13 +58,20 @@
                 </div>
             </div>
 
-            <carousel id="project-images" style="
-             min-width: 200px;
-             max-width: 600px;
-             flex: 1;">
-                <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
-                <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling">
-            </carousel>
+            <div id="projet-carousel" class="column c a sgap labelbox" style="
+                min-width: 200px;
+                max-width: 400px;
+                flex: 1;">
+                <carousel id="project-images" style="width: 100%;">
+                    <!-- <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
+                    <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling"> -->
+                </carousel>
+                <div class="fileinput hide" id="projet-add-image-container">
+                    <input type="file" id="projet-add-image">
+                    <label for="projet-add-image" class="valid">+</label>
+                </div>
+                <label>Images</label>
+            </div>
         </article>
         
         <article class="column a">
@@ -106,7 +90,9 @@
             <button class="bmar valid hide" id="taches-ajout">Ajouter</button>
         </article>
 
-        <div class="floating_button hide">
+        <p class="floating_button left clickable" onclick="navigateTo('searchpage')">< Retour</p>
+
+        <div id="projet-floating-buttons" class="floating_button hide">
             <button id="edit-button">Modifier</button>
             <div id="default-buttons" class="column a">
                 <p>Projet modifié</p>
@@ -203,10 +189,11 @@
     </div>
 
     <script src="js/utils.js" defer></script>
-    <script src="js/carousel.js" defer></script>
+    <script src="js/components.js" defer></script>
     <script src="js/data.js" defer></script>
     <script src="js/main.js" defer></script>
 
+    <script src="js/pages/searchpage.js" defer></script>
     <script src="js/pages/projectpage.js" defer></script>
 </body>
 </html>

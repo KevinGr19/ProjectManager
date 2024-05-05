@@ -48,13 +48,12 @@ button:hover{
     background: var(--button-hover);
 }
 
-button.valid{background: var(--button-valid);}
-button.valid:hover{background: var(--button-valid-hover);}
-button.blue{background: var(--button-blue);}
-button.blue:hover{background: var(--button-blue-hover);}
-button.valid:active, button.blue:active{background: unset;}
+.valid{background: var(--button-valid);}
+.valid:hover{background: var(--button-valid-hover);}
+.blue{background: var(--button-blue);}
+.blue:hover{background: var(--button-blue-hover);}
 
-button:active{
+button:active, .valid:active, .blue:active{
     background: white;
     color: black;
 }
@@ -431,4 +430,15 @@ article{
     content: '';
 
     left: -12px;
+}
+
+.fileinput > input[type=file]{
+    display: none;
+}
+
+.fileinput > label{
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 5px 10px;
 }

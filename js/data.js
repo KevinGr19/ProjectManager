@@ -52,8 +52,9 @@ class Project{
         this.description = ""
         this.createdAt = null
         this.modifiedAt = null
-        this.images = []
         this.tasks = []
+        this.images = []
+        this.imagesToAdd = new Set()
         this.tags = new Set()
     }
 
@@ -128,14 +129,15 @@ class AbstractTask{
     }
 
     isModified(oldTask){
-        return this.id != oldTask.id
-            || this.name != oldTask.id
+        return this.name != oldTask.name
     }
 
     processChanges(oldTask){
         if(!oldTask){
             this.createdAt = new Date()
             this.modifiedAt = new Date()
+
+            if(this.finished) this.finishedAt = new Date()
         }
 
         else {
@@ -179,6 +181,8 @@ class Task extends AbstractTask{
     isModified(oldTask){
         return super.isModified(oldTask)
             || this.description != oldTask.description
+            || this.subtasks.length != oldTask.subtasks.length
+            || this.subtasks.find((t,i) => t.id != oldTask.subtasks[i].id)
     }
 
     toJSON(){
@@ -255,6 +259,7 @@ class SubTask extends AbstractTask{
 }
 //#endregion
 
+//#region Fake data
 // let fake_tags = {
 //     1:new Tag(1, "Unity", "black"),
 //     2:new Tag(2, "C#", "green"),
@@ -339,3 +344,4 @@ class SubTask extends AbstractTask{
 
 //     return project
 // }
+//#endregion

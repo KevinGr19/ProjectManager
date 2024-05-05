@@ -55,6 +55,11 @@
     z-index: 3;
 }
 
+.floating_button.left{
+    right: unset;
+    left: 20px;
+}
+
 .novpad{padding-top: 0 !important; padding-bottom: 0 !important;}
 .nohpad{padding-left: 0; padding-right: 0;}
 .nopad{padding: 0;}
