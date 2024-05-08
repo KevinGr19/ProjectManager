@@ -3,7 +3,6 @@ page_loads["projectpage"] = (args) => {
     //#region Data
     let original_project = null
     let project = null
-    let tags = null
 
     function setupData(){
         project = original_project.clone()
@@ -47,15 +46,16 @@ page_loads["projectpage"] = (args) => {
                     if(oldSubTask && st.isModified(oldSubTask))
                         t.modifiedAt = new Date()
                 }
+                else st.processChanges(null)
 
                 st.id = `${t.id}.${j+1}`
             })
         })
 
         // Save images
-        for(let file of project.imagesToAdd){
+        for(let file of projectVM.carouselVM.imagesToAdd.values()){
             let imgId = await saveImage(file)
-            project.images.push(imgId)
+            project.images.add(imgId)
         }
 
         // Save project
@@ -66,7 +66,7 @@ page_loads["projectpage"] = (args) => {
     async function loadProject(){
         let json = await getProject(args.projectId)
         original_project = Project.fromJSON(json)
-        tags = await getTags()
+        await refreshTags()
 
         setupData()
         projectVM.project = project
@@ -94,9 +94,7 @@ page_loads["projectpage"] = (args) => {
             this.t_progressBar = root.querySelector("#text-progressbar")
             this.d_progressFill = this.d_progressBar.querySelector("span")
             this.d_tasks = root.querySelector("#taches-projet")
-            this.d_carousel = root.querySelector("carousel")
-            this.d_addImage = root.querySelector("#projet-add-image-container")
-            this.i_addImage = this.d_addImage.querySelector("input[type=file]")
+            this.d_carousel = root.querySelector("#projet-carousel")
 
             this.t_noTags = this.d_tags.create('p>Aucune')
 
@@ -116,16 +114,12 @@ page_loads["projectpage"] = (args) => {
                 else this.d_tasks.appendChild(draggedVM.root)
             })
 
-            this.i_addImage.addEventListener('change', (e) => {
-                const files = this.i_addImage.files
-                for(let file of files)
-                    this.project.imagesToAdd.add(file)
-            })
-
-            this.carousel = new Carousel(this.d_carousel)
-
             this.tasksVM = []
             this.tagsVM = new Map()
+
+            this.carouselVM = new CarouselVM(this.d_carousel)
+            this.carouselVM.canDelete = () => !isSoftEdit()
+            this.carouselVM.deleteCallback = () => setEditMode(1)
 
             this.lightboxTaskVM = null
             this.lightboxTagsVM = null
@@ -139,6 +133,8 @@ page_loads["projectpage"] = (args) => {
 
         set project(value){
             this.#project = value
+            this.carouselVM.images = this.project.images
+
             this.setupBindingFrom()
             this.updateAll()
             this.refreshTaskLightbox()
@@ -212,24 +208,6 @@ page_loads["projectpage"] = (args) => {
             this.t_noTags.classList.toggle('hide', this.tagsVM.size)
         }
 
-        updateImages(){
-            this.carousel.clear()
-            this.project.images.forEach(token => {
-                let img = this.carousel.addBlankImage(true)
-                if(typeof token === 'string'){
-                    img.setAttribute('src', token)
-                    this.carousel.refreshIfProjected(img.carouselId)
-                }
-                else{
-                    getImageURL(token).then((res) => {
-                        if(res) img.setAttribute('src', res)
-                        this.carousel.refreshIfProjected(img.carouselId)
-                    })
-                }
-            })
-            this.carousel.refreshSelected()
-        }
-
         updateAll(){
             this.updateTitle()
             this.updateDescription()
@@ -237,7 +215,6 @@ page_loads["projectpage"] = (args) => {
             this.updateTaskVisuals()
             this.updateTasks()
             this.updateTags()
-            this.updateImages()
         }
         //#endregion
 
@@ -246,10 +223,10 @@ page_loads["projectpage"] = (args) => {
             this.i_description.toggleAttribute('readonly', !isHardEdit())
             this.b_addTask.classList.toggle('hide', !isHardEdit())
             this.b_manageTags.classList.toggle('hide', !isHardEdit())
-            this.d_addImage.classList.toggle('hide', !isHardEdit())
 
             this.tasksVM.forEach(vm => vm.refreshEditMode())
 
+            this.carouselVM.setEditMode(isHardEdit())
             this.lightboxTaskVM?.refreshEditMode()
             if(this.lightboxTagsVM) closeLightbox()
         }
@@ -318,15 +295,16 @@ page_loads["projectpage"] = (args) => {
 
             if(!this.lightboxTagsVM){
                 loadLightbox("tag-lightbox", {
+                    onOpen: () => {
+                        this.lightboxTagsVM = new TagsLightboxVM(lightbox)
+                        this.lightboxTagsVM.project = this.project
+                    },
                     onClose: () => {
                         this.lightboxTagsVM.removeBinding()
                         this.lightboxTagsVM = null
                     }
                 })
-                this.lightboxTagsVM = new TagsLightboxVM(lightbox)
             }
-            
-            this.lightboxTagsVM.project = this.project
         }
 
         refreshTagsLightbox(){
@@ -643,6 +621,13 @@ page_loads["projectpage"] = (args) => {
         constructor(root){
             this.root = root.create('div.etiquette')
             this.t_name = this.root.create('p')
+
+            this.root.addEventListener('contextmenu', (e) => {
+                e.preventDefault()
+                if(!this.tag) return
+
+                this.openContextMenu(e)
+            })
         }
 
         get tagId(){
@@ -658,10 +643,29 @@ page_loads["projectpage"] = (args) => {
         }
 
         update(){
-            this.root.style.backgroundColor = this.tag.color
-            this.t_name.innerText = this.tag.name
+            this.root.style.backgroundColor = this.tag ? this.tag.color : 'black'
+            this.t_name.innerText = this.tag ? this.tag.name : '...'
         }
 
+        openContextMenu(e){
+            openContextMenu(e.clientX, e.clientY, [
+                {
+                    label: "Modifier",
+                    action: () => {
+                        if(this.tag) editTagLB(this.tagId)
+                    }
+                },
+                {
+                    label: "Supprimer",
+                    action: () => {
+                        if(this.tag) deleteConfirmation(
+                            `Êtes-vous sûr de vouloir supprimer l'étiquette "<b>${this.tag.name ?? "Étiquette sans nom"}</b>" ?`,
+                            () => deleteTag(this.tagId).then(() => refreshTags())
+                        )
+                    }
+                }
+            ])
+        }
     }
 
     class TagsLightboxVM{
@@ -673,6 +677,9 @@ page_loads["projectpage"] = (args) => {
 
             this.d_projectTags = this.root.querySelector("#lb-project-tags")
             this.d_otherTags = this.root.querySelector("#lb-other-tags")
+            this.b_newTag = this.root.querySelector("#lb-tag-new")
+
+            this.b_newTag.addEventListener('click', () => editTagLB())
 
             this.tagsVM = new Map()
 
@@ -800,9 +807,23 @@ page_loads["projectpage"] = (args) => {
     checkbox_cancel_button.addEventListener('click', () => cancelChanges())
     checkbox_confirm_button.addEventListener('click', () => saveChanges())
     //#endregion
+
+    pageEvents["tagsrefreshed"] = () => {
+        // Filtering unreferenced tags
+        if(!original_project) return
+        original_project.tags = new Set(original_project.tags.keys().filter(tagId => tags.has(tagId)))
+
+        if(!project) return
+        project.tags = new Set(project.tags.keys().filter(tagId => tags.has(tagId)))
+
+        // Updating tags visuals
+        projectVM.updateTags()
+        if(projectVM.lightboxTagsVM) projectVM.lightboxTagsVM.updateAll()
+    }
     
     loadProject()
     setEditMode(0)
     floating_button.classList.remove('hide')
 
+    refreshTags()
 }

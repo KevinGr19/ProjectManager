@@ -8,6 +8,9 @@
     flex-direction: column;
 }
 
+.jend{justify-content: end;}
+.aend{align-items: end;}
+
 .sgap{gap: 10px;}
 .mgap{gap: 20px;}
 .bgap{gap: 40px;}

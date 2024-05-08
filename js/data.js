@@ -53,7 +53,7 @@ class Project{
         this.createdAt = null
         this.modifiedAt = null
         this.tasks = []
-        this.images = []
+        this.images = new Set()
         this.imagesToAdd = new Set()
         this.tags = new Set()
     }
@@ -69,7 +69,7 @@ class Project{
         newProject.description =  this.description
         newProject.createdAt =  this.createdAt
         newProject.modifiedAt =  this.modifiedAt
-        newProject.images = [...this.images]
+        newProject.images = new Set(this.images)
         newProject.tasks = this.tasks.map(t => t.clone())
         newProject.tags = new Set(this.tags)
 
@@ -94,7 +94,7 @@ class Project{
         project.description = json.description
         project.createdAt = json.createdAt
         project.modifiedAt = json.modifiedAt
-        project.images = [...json.images]
+        project.images = new Set(json.images)
         project.tags = new Set(json.tags)
         project.tasks = json.tasks.map(tJson => Task.fromJSON(tJson, project))
 

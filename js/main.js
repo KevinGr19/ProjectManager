@@ -1,6 +1,10 @@
 //#region Navigation
 const pages = {}
 const page_loads = {}
+const page_unloads = {}
+
+var pageEvents = {}
+let currentPage = null
 
 document.querySelectorAll(".page").forEach(p => {
     pages[p.id] = p.innerHTML
@@ -11,21 +15,27 @@ const container = document.querySelector("#container")
 
 function navigateTo(page, args){
     closeLightbox()
+    if(currentPage && page_unloads[currentPage]) page_unloads[currentPage]()
+
     currentPage = page
     container.innerHTML = pages[page]
 
+    pageEvents = {}
     if(page_loads[currentPage]) page_loads[currentPage](args)
 }
 
 function goHome(){
     navigateTo('searchpage')
 }
+
+function dispatchPageEvent(name, data){
+    if(pageEvents[name]) pageEvents[name](data)
+}
 //#endregion
 
 //#region Lightbox
 const overlay = document.querySelector(".overlay")
 const lightbox = overlay.querySelector("#lightbox")
-let lightboxCloseAction = null
 
 const lightboxes = {}
 document.querySelectorAll(".lightbox").forEach(l => {
@@ -33,25 +43,58 @@ document.querySelectorAll(".lightbox").forEach(l => {
     l.remove()
 })
 
-function loadLightbox(id, options){
+const lightboxHistory = []
+
+function getCurrentLightbox(){
+    return lightboxHistory[lightboxHistory.length-1]
+}
+
+function refreshCurrentLightbox(){
+    let lb = getCurrentLightbox()
+    if(!lb){
+        overlay.classList.remove('show')
+        lightbox.innerHTML = ''
+        return
+    }
+    
     overlay.classList.add('show')
 
-    if(lightboxCloseAction) lightboxCloseAction()
-    lightboxCloseAction = options?.onClose
+    lightbox.innerHTML = lightboxes[lb.id]
+    if(lb.options && lb.options.onOpen) lb.options.onOpen()
+}
 
-    lightbox.innerHTML = lightboxes[id]
+function loadLightbox(id, options){
+    checkOnCloseLightbox()
+
+    lightboxHistory.push({
+        id: id,
+        options: options
+    })
+    refreshCurrentLightbox()
 }
 
 function closeLightbox(){
-    overlay.classList.remove('show')
-
-    if(lightboxCloseAction) lightboxCloseAction()
-    lightboxCloseAction = null
-
-    lightbox.innerHTML = ''
+    checkOnCloseLightbox()
+    lightboxHistory.length = 0
+    refreshCurrentLightbox()
 }
 
-closeButton(lightbox.parentNode, closeLightbox, '15px')
+function backLightbox(){
+    checkOnCloseLightbox()
+    lightboxHistory.pop()
+    refreshCurrentLightbox()
+}
+
+function checkOnCloseLightbox(){
+    let lb = getCurrentLightbox()
+    if(lb && lb.options && lb.options.onClose) lb.options.onClose()
+}
+
+closeButton(lightbox.parentNode, () => {
+    let lb = getCurrentLightbox()
+    if(lb && lb.options && lb.options.backClose) backLightbox()
+    else closeLightbox()
+}, '15px')
 //#endregion
 
 //#region Context menu
@@ -147,22 +190,82 @@ function saveProject(id, json){
     }))
 }
 
-function getTags(){
-    return dbSetup.then(() => new Promise((resolve, reject) => {
+function refreshTags(){
+    let promise = dbSetup.then(() => new Promise((resolve, reject) => {
         const transaction = db.transaction(["tags"], "readwrite")
         const tagStore = transaction.objectStore("tags")
         const req = tagStore.openCursor()
 
-        let tags = new Map()
+        let ids = new Set(tags.keys())
         req.onsuccess = (e) => {
             let cursor = e.target.result
             if(cursor){
-                tags.set(cursor.primaryKey, cursor.value)
+                let tag = tags.get(cursor.primaryKey)
+                if(tag){
+                    tag.name = cursor.value.name
+                    tag.color = cursor.value.color
+                }
+                else{
+                    tags.set(cursor.primaryKey, new Tag(cursor.primaryKey, cursor.value.name, cursor.value.color))
+                }
+                ids.delete(cursor.primaryKey)
                 cursor.continue()
             }
-            else resolve(tags)
+            else{
+                ids.forEach(id => tags.delete(id))
+                resolve()
+            }
         }
+    }))
+
+    promise.then(() => dispatchPageEvent("tagsrefreshed"))
+    return promise
+}
+
+function saveTag(json, id){
+    return dbSetup.then(() => new Promise((resolve, reject) => {
+        const transaction = db.transaction(["tags"], "readwrite")
+        const tagStore = transaction.objectStore("tags")
+        const req = id ? tagStore.put(json, id) : tagStore.add(json)
+
+        req.onsuccess = (e) => resolve(e.target.result)
         req.onerror = (e) => reject(e.target.error)
+    }))
+}
+
+function deleteTag(id){
+    return dbSetup.then(() => new Promise((resolve, reject) => {
+        const transaction = db.transaction(["tags"], "readwrite")
+        const tagStore = transaction.objectStore("tags")
+        
+        const tReq = tagStore.delete(id)
+        tReq.onsuccess = resolve
+        tReq.onerror = (e) => reject(e.target.error)
+    })).then(() => deleteTagFromProjects(id))
+}
+
+function deleteTagFromProjects(id){
+    return dbSetup.then(() => new Promise((resolve, reject) => {
+        const transaction = db.transaction(["projects"], "readwrite")
+        const projectStore = transaction.objectStore("projects")
+        
+        const pReq = projectStore.openCursor()
+        let projectEditPromises = []
+
+        pReq.onsuccess = (e) => {
+            let cursor = e.target.result
+            if(cursor){
+                let project = cursor.value
+                if(project.tags.has(id)){
+                    project.tags.delete(id)
+                    projectEditPromises.push(cursor.update(project))
+                }
+                cursor.continue()
+            }
+            else Promise.all(projectEditPromises).then(() => resolve())
+        }
+
+        pReq.onerror = (e) => reject(e.target.error)
     }))
 }
 
@@ -204,6 +307,61 @@ function getImageURL(id){
 const dbSetup = setupDB()
 //#endregion
 
+//#region Tags
+var tags = new Map()
+
+function editTagLB(id){
+    loadLightbox("tag-edit-lightbox", {backClose: true})
+    const t_title = lightbox.querySelector("#lb-tag-edit-title")
+    const i_name = lightbox.querySelector("#lb-tag-edit-name")
+    const i_color = lightbox.querySelector("#lb-tag-edit-color")
+    const b_save = lightbox.querySelector("#lb-tag-edit-save")
+
+    if(id){
+        let oldTag = tags.get(id)
+        i_name.value = oldTag.name
+        i_color.value = oldTag.color
+    }
+
+    let saveWord = id ? 'Modifier' : 'Créer'
+    b_save.innerText = saveWord
+    t_title.innerText = `${saveWord} une étiquette`
+
+    b_save.addEventListener('click', () => {
+        b_save.disabled = true
+        saveTag({name: i_name.value, color: i_color.value}, id)
+            .then(res => refreshTags())
+            .then(() => backLightbox())
+            .catch(err => b_save.disabled = false)
+    })
+}
+//#endregion
+
+//#region Delete confirmation
+function deleteConfirmation(prompt, onConfirm, onCancel){
+    let confirmed = false
+    loadLightbox("delete-confirmation", {
+        onOpen: () => {
+            let t_prompt = lightbox.querySelector("#lb-delete-prompt")
+            let b_cancel = lightbox.querySelector("#lb-delete-cancel")
+            let b_confirm = lightbox.querySelector("#lb-delete-confirm")
+
+            t_prompt.innerHTML = prompt
+            b_cancel.addEventListener('click', () => backLightbox())
+            b_confirm.addEventListener('click', () => {
+                if(onConfirm) onConfirm()
+                confirmed = true
+                backLightbox()
+            })
+        },
+        onClose: () => {
+            if(!confirmed && onCancel) onCancel()
+        },
+        backClose: true
+    })
+}
+//#endregion
+
 setTimeout(() => {
     navigateTo("projectpage", {projectId: 69})
-}, 1)
+}, 10)
