@@ -53,8 +53,8 @@ class Project{
         this.createdAt = null
         this.modifiedAt = null
         this.tasks = []
+        this.notes = []
         this.images = new Set()
-        this.imagesToAdd = new Set()
         this.tags = new Set()
     }
 
@@ -71,6 +71,7 @@ class Project{
         newProject.modifiedAt =  this.modifiedAt
         newProject.images = new Set(this.images)
         newProject.tasks = this.tasks.map(t => t.clone())
+        newProject.notes = this.notes.map(n => n.clone())
         newProject.tags = new Set(this.tags)
 
         return newProject
@@ -84,6 +85,7 @@ class Project{
             modifiedAt: this.modifiedAt,
             images: this.images,
             tasks: this.tasks.map(t => t.toJSON()),
+            notes: this.notes.map(n => n.toJSON()),
             tags: this.tags,
         }
     }
@@ -97,6 +99,7 @@ class Project{
         project.images = new Set(json.images)
         project.tags = new Set(json.tags)
         project.tasks = json.tasks.map(tJson => Task.fromJSON(tJson, project))
+        project.notes = json.notes.map(nJson => Note.fromJSON(nJson, project))
 
         return project
     }
@@ -254,6 +257,74 @@ class SubTask extends AbstractTask{
         subtask.finishedAt = json.finishedAt
 
         return subtask
+    }
+
+}
+
+class Note{
+
+    constructor(project){
+        this.project = project
+
+        this.id = null
+        this.title = ""
+        this.description = ""
+        this.createdAt = null
+        this.modifiedAt = null
+        this.images = new Set()
+    }
+
+    clone(){
+        let newNote = new Note(this.project)
+        newNote.id = this.id
+        newNote.title = this.title
+        newNote.description = this.description
+        newNote.createdAt = this.createdAt
+        newNote.modifiedAt = this.modifiedAt
+        newNote.images = new Set(this.images)
+
+        return newNote
+    }
+
+    toJSON(){
+        return {
+            id: this.id,
+            title: this.title,
+            description: this.description,
+            createdAt: this.createdAt,
+            modifiedAt: this.modifiedAt,
+            images: this.images,
+        }
+    }
+
+    static fromJSON(json, project){
+        let newNote = new Note(project)
+        newNote.id = json.id
+        newNote.title = json.title
+        newNote.description = json.description
+        newNote.createdAt = json.createdAt
+        newNote.modifiedAt = json.modifiedAt
+        newNote.images = new Set(json.images)
+
+        return newNote
+    }
+
+    isModified(oldNote){
+        return this.title != oldNote.title
+            || this.description != oldNote.description
+            || this.images.length != oldNote.length
+            || ![...this.images].every(x => oldNote.images.has(x))
+    }
+
+    processChanges(oldNote){
+        if(!oldNote){
+            this.createdAt = new Date()
+            this.modifiedAt = new Date()
+        }
+
+        else if(this.isModified(oldNote)){
+            this.modifiedAt = new Date()
+        }
     }
 
 }

@@ -46,6 +46,18 @@ function imgCorner(parent, onclick, {src, alt, width, height}){
 	return button
 }
 
+if (!String.prototype.format) {
+	String.prototype.format = function() {
+		var args = arguments;
+		return this.replace(/{(\d+)}/g, function(match, number) { 
+		return typeof args[number] != 'undefined'
+			? args[number]
+			: match
+		;
+		});
+	};
+}
+
 function closeButton(parent, onclick, size){
 	return imgCorner(parent, onclick, {
 		src: "assets/img/x.png",

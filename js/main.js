@@ -371,8 +371,11 @@ function deleteConfirmation(prompt, onConfirm, onCancel){
         backClose: true
     })
 }
+
+const TAG_DELETE_MSG = "Êtes-vous sûr de vouloir supprimer l'étiquette \"<b>{0}</b>\" ?<br><br>L'action est irréversible !"
+const PROJECT_DELETE_MSG = "Êtes-vous sûr de vouloir supprimer le projet \"<b>{0}</b>\" ?<br><br>L'action est irréversible !"
 //#endregion
 
 setTimeout(() => {
-    navigateTo("searchpage")
+    navigateTo("projectpage", {projectId: 69})
 }, 10)

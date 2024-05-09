@@ -90,6 +90,13 @@
             <button class="bmar valid hide" id="taches-ajout">Ajouter</button>
         </article>
 
+        <article class="column a">
+            <h2>Notes de projet</h2>
+            <p id="notes-counter">0 notes</p>
+            <div class="notes bmar" id="notes-projet"></div>
+            <button class="bmar valid hide" id="notes-ajout">Ajouter</button>
+        </article>
+
         <article class="column a" style="padding-bottom: 80px;">
             <h2>Actions</h2>
             <div class="column a sgap bmar">
@@ -141,7 +148,7 @@
                 <div class="column sgap">
                     <div class="labelbox">
                         <input type="text" id="tache_nom" placeholder="Entrez le nom ici..."
-                            style="min-width: 500px;" value="Modéliser et animer les personnages et ennemis">
+                            style="min-width: 500px;">
                         <label for="tache_nom">Nom de la tâche</label>
                     </div>
                     <div class="labelbox">
@@ -236,6 +243,30 @@
             </div>
             <div class="row c">
                 <button class="valid" id="lb-create-project-new">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="lightbox" id="note-lightbox">
+        <div class="column bmar sgap">
+            <h2 id="lb-note-title">Note ...</h2>
+            <div class="labelbox">
+                <input type="text" id="note_title" placeholder="Entrez le nom ici..."
+                    style="min-width: 500px;">
+                <label for="tache_nom">Nom de la note</label>
+            </div>
+            <div class="labelbox">
+                <textarea id="note_description" cols="60" rows="10" class="noresize"
+                placeholder="Entrez la description ici..."></textarea>
+                <label for="tache_description">Description de la note</label>
+            </div>
+            <div class="textval">
+                <p>Création :</p>
+                <p id="note_created"></p>
+            </div>
+            <div class="textval">
+                <p>Dernière modification :</p>
+                <p id="note_modified"></p>
             </div>
         </div>
     </div>

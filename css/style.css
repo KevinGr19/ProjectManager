@@ -460,3 +460,68 @@ article{
     font-size: 20px;
     padding: 5px 10px;
 }
+
+.notes{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+
+    width: 80%;
+    max-width: 1400px;
+}
+
+.note{
+    padding: 10px;
+    border: solid 1px var(--border);
+    background: var(--ter-bg);
+    cursor: pointer;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    width: 300px;
+    height: 60px;
+    gap: 5px;
+}
+
+.note .numero{
+    color: var(--sec);
+}
+
+.note .title{
+    overflow: hidden;
+    display: -webkit-box;
+
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+}
+
+.note .note_header{
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    text-align: center;
+    gap: 10px;
+}
+
+.note .descriptioncontainer{
+    flex: 1;
+    overflow: hidden;
+}
+
+.note .description{
+    font-size: 0.85em;
+    font-style: italic;
+    color: var(--sec);
+    margin-top: 15px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 7;
+}

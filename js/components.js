@@ -257,7 +257,7 @@ class TagVM{
                     if(!this.tag) return
                     let fixedId = this.tagId
                     deleteConfirmation(
-                        `Êtes-vous sûr de vouloir supprimer l'étiquette "<b>${this.tag.name}</b>" ?`,
+                        TAG_DELETE_MSG.format(this.tag.name),
                         () => deleteTag(fixedId).then(() => refreshTags())
                     )
                 }

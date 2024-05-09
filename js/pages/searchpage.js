@@ -72,8 +72,7 @@ page_loads["searchpage"] = (args) => {
             if(!this.id) return
             let fixedId = this.id
 
-            deleteConfirmation(`Êtes-vous sûr de vouloir supprimer le projet "<b>${this.project.title}</b>" ?
-                <br><br>L'action est irréversible !`,
+            deleteConfirmation(PROJECT_DELETE_MSG.format(this.project.title),
                 () => { deleteProject(fixedId).then(() => this.deleteFromPage()) })
         }
 

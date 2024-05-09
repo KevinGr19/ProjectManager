@@ -18,6 +18,10 @@ page_loads["projectpage"] = (args) => {
                 subtask.task = task
             }
         }
+
+        for(let i in project.notes){
+            project.notes[i] = Watcher.toWatcherProxy(project.notes[i])
+        }
     }
     
     async function updateProject(){
@@ -27,9 +31,6 @@ page_loads["projectpage"] = (args) => {
         project.tasks = project.tasks.filter(t => !t.markedRemove)
         project.tasks.forEach((t,i) => {
             let oldTask = original_project.tasks.find(_t => _t.id == t.id)
-
-            if(!t.createdAt)
-                t.createdAt = new Date()
 
             t.subtasks = t.subtasks.filter(st => !st.markedRemove)
             t.processChanges(oldTask)
@@ -50,6 +51,14 @@ page_loads["projectpage"] = (args) => {
 
                 st.id = `${t.id}.${j+1}`
             })
+        })
+
+        // Notes
+        project.notes = project.notes.filter(n => !n.markedRemove)
+        project.notes.forEach((n,i) => {
+            let oldNote = original_project.notes.find(_n => _n.id == n.id)
+            n.processChanges(oldNote)
+            n.id = i+1
         })
 
         // Save images
@@ -86,6 +95,7 @@ page_loads["projectpage"] = (args) => {
             this.i_description = root.querySelector("#description-projet")
             this.t_created = root.querySelector("#created-projet")
             this.t_modified = root.querySelector("#modified-projet")
+            this.d_carousel = root.querySelector("#projet-carousel")
             this.t_taskCounter = root.querySelector("#taches-compteur")
             this.b_addTask = root.querySelector("#taches-ajout")
             this.d_tags = root.querySelector("#etiquettes-projet")
@@ -94,14 +104,14 @@ page_loads["projectpage"] = (args) => {
             this.t_progressBar = root.querySelector("#text-progressbar")
             this.d_progressFill = this.d_progressBar.querySelector("span")
             this.d_tasks = root.querySelector("#taches-projet")
-            this.d_carousel = root.querySelector("#projet-carousel")
+            this.d_notes = root.querySelector("#notes-projet")
+            this.b_addNote = root.querySelector("#notes-ajout")
+            this.t_notesCounter = root.querySelector("#notes-counter")
             this.b_deleteProject = root.querySelector("#button-delete-project")
 
             this.t_noTags = this.d_tags.create('p>Aucune')
 
-            this.b_addTask.addEventListener('click', () => {
-                if(isHardEdit()) this.createNewTask()
-            })
+            this.b_addTask.addEventListener('click', () => this.createNewTask())
 
             this.b_manageTags.addEventListener('click', () => this.openTags())
 
@@ -115,14 +125,16 @@ page_loads["projectpage"] = (args) => {
                 else this.d_tasks.appendChild(draggedVM.root)
             })
 
+            this.b_addNote.addEventListener('click', () => this.createNewNote())
+
             this.b_deleteProject.addEventListener('click', () => {
                 let fixedId = args.projectId
-                deleteConfirmation(`Êtes-vous sûr de vouloir supprimer le projet "<b>${this.project.title}</b>" ?
-                    <br><br>L'action est irréversible !`,
+                deleteConfirmation(PROJECT_DELETE_MSG.format(this.project.title),
                     () => { deleteProject(fixedId).then(() => goHome()) })
             })
 
             this.tasksVM = []
+            this.notesVM = []
             this.tagsVM = new Map()
 
             this.carouselVM = new CarouselVM(this.d_carousel)
@@ -130,6 +142,7 @@ page_loads["projectpage"] = (args) => {
             this.carouselVM.deleteCallback = () => setEditMode(1)
 
             this.lightboxTaskVM = null
+            this.lightboxNoteVM = null
             this.lightboxTagsVM = null
 
             this.setupBindingTo()
@@ -195,6 +208,17 @@ page_loads["projectpage"] = (args) => {
             this.project.tasks.forEach(task => this.addTask(task))
         }
 
+        updateNoteVisuals(){
+            this.t_notesCounter.innerText = `${this.project.notes.length} notes`
+        }
+
+        updateNotes(){
+            this.notesVM.length = 0
+            this.d_notes.innerHTML = ''
+
+            this.project.notes.forEach(note => this.addNote(note))
+        }
+
         updateTags(){
             this.tagsVM.values().forEach(vm => {
                 if(!this.project.tags.has(vm.tagId)){
@@ -222,6 +246,8 @@ page_loads["projectpage"] = (args) => {
             this.updateDates()
             this.updateTaskVisuals()
             this.updateTasks()
+            this.updateNoteVisuals()
+            this.updateNotes()
             this.updateTags()
         }
         //#endregion
@@ -230,11 +256,13 @@ page_loads["projectpage"] = (args) => {
             this.i_title.toggleAttribute('readonly', !isHardEdit())
             this.i_description.toggleAttribute('readonly', !isHardEdit())
             this.b_addTask.classList.toggle('hide', !isHardEdit())
+            this.b_addNote.classList.toggle('hide', !isHardEdit())
 
             this.tasksVM.forEach(vm => vm.refreshEditMode())
 
             this.carouselVM.setEditMode(isHardEdit())
             this.lightboxTaskVM?.refreshEditMode()
+            this.lightboxNoteVM?.refreshEditMode()
         }
 
         openTask(task){
@@ -275,6 +303,8 @@ page_loads["projectpage"] = (args) => {
         }
 
         createNewTask(){
+            if(!isHardEdit()) return
+
             let newTask = Watcher.toWatcherProxy(new Task(this.project))
             this.project.tasks.push(newTask)
 
@@ -314,6 +344,42 @@ page_loads["projectpage"] = (args) => {
         refreshTagsLightbox(){
             if(!this.lightboxTagsVM) return
             this.lightboxTagsVM.project = this.project
+        }
+
+        addNote(note){
+            let noteVM = new NoteVM(this.d_notes)
+            this.notesVM.push(noteVM)
+            noteVM.note = note
+
+            return noteVM
+        }
+
+        createNewNote(){
+            if(!isHardEdit()) return
+
+            let newNote = Watcher.toWatcherProxy(new Note(project))
+            newNote.id = this.project.notes.length + 1
+            newNote.title = `Note n°${newNote.id}`
+            this.project.notes.push(newNote)
+
+            let noteVM = this.addNote(newNote)
+
+            this.updateNoteVisuals()
+        }
+
+        openNote(note){
+            if(!this.lightboxNoteVM){
+                loadLightbox("note-lightbox", {
+                    onClose: () => {
+                        this.lightboxNoteVM.removeBinding()
+                        this.lightboxNoteVM = null
+                    }
+                })
+                this.lightboxNoteVM = new NoteLightBoxVM(lightbox)
+                this.lightboxNoteVM.refreshEditMode()
+            }
+
+            this.lightboxNoteVM.note = note
         }
     }
 
@@ -699,6 +765,157 @@ page_loads["projectpage"] = (args) => {
             this.project.watcher.trigger('tags')
         }
 
+    }
+
+    class NoteVM{
+
+        #note = null
+
+        constructor(root){
+            this.root = root.create('div.note')
+            this.d_header = this.root.create('div.note_header')
+            this.t_numero = this.d_header.create('p.numero')
+            this.t_title = this.d_header.create('p.title')
+            this.t_date = this.root.create('p.date')
+
+            this.root.addEventListener('contextmenu', (e) => {
+                e.preventDefault()
+                this.openContextMenu(e)
+            })
+
+            this.root.addEventListener('click', () => projectVM.openNote(this.note))
+        }
+
+        get note(){
+            return this.#note
+        }
+
+        set note(value){
+            this.#note = value
+            this.setupBindingFrom()
+            this.updateAll()
+        }
+
+        //#region Binding
+        setupBindingFrom(){
+            this.note.watcher.listen('id', 'vm', () => this.updateId())
+            this.note.watcher.listen('title', 'vm', () => this.updateTitle())
+            this.note.watcher.listen('createdAt', 'vm', () => this.updateDate())
+            this.note.watcher.listen('markedRemove', 'vm', () => this.updateRemoveOutline())
+        }
+
+        updateId(){
+            this.t_numero.innerText = `#${this.note.id}`
+        }
+
+        updateTitle(){
+            this.t_title.innerText = this.note.title
+        }
+
+        updateDate(){
+            this.t_date.classList.toggle('hide', !this.note.createdAt)
+            this.t_date.innerText = dateToText(this.note.createdAt)
+        }
+
+        updateRemoveOutline(){
+            this.root.classList.toggle('removed', this.note.markedRemove == true)
+        }
+
+        updateAll(){
+            this.updateId()
+            this.updateTitle()
+            this.updateDate()
+            this.updateRemoveOutline()
+        }
+        //#endregion
+
+        openContextMenu(e){
+            if(isSoftEdit()) return
+
+            openContextMenu(e.clientX, e.clientY, [
+                {
+                    label: this.note.markedRemove ? "Annuler la suppression" : "Supprimer",
+                    action: () => {
+                        this.note.markedRemove = !this.note.markedRemove
+                        if(this.note.markedRemove) setEditMode(1)
+                    }
+                }
+            ])
+        }
+    }
+
+    class NoteLightBoxVM{
+
+        #note = null
+
+        constructor(root){
+            this.root = root
+            this.t_title = root.querySelector("#lb-note-title")
+            this.i_title = root.querySelector("#note_title")
+            this.i_description = root.querySelector("#note_description")
+            this.t_created = root.querySelector("#note_created")
+            this.t_modified = root.querySelector("#note_modified")
+
+            this.setupBindingTo()
+        }
+
+        get note(){
+            return this.#note
+        }
+
+        set note(value){
+            this.#note = value
+            this.setupBindingFrom()
+            this.updateAll()
+        }
+
+        //#region Binding
+        setupBindingTo(){
+            this.i_title.addEventListener('change', e => this.note.title = e.currentTarget.value)
+            this.i_description.addEventListener('change', e => this.note.description = e.currentTarget.value)
+        }
+
+        setupBindingFrom(){
+            this.note.watcher.listen('id', 'lb-vm', () => this.updateId())
+            this.note.watcher.listen('title', 'lb-vm', () => this.updateTitle())
+            this.note.watcher.listen('description', 'lb-vm', () => this.updateDescription())
+            this.note.watcher.listen('createdAt', 'lb-vm', () => this.updateDates())
+            this.note.watcher.listen('modifiedAt', 'lb-vm', () => this.updateDates())
+        }
+
+        removeBinding(){
+            this.note.watcher.removeListeners('lb-vm')
+        }
+
+        updateId(){
+            this.t_title.innerText = `Note #${this.note.id}`
+        }
+
+        updateTitle(){
+            this.i_title.value = this.note.title
+        }
+
+        updateDescription(){
+            this.i_description.value = this.note.description
+        }
+
+        updateDates(){
+            this.t_created.innerText = dateToText(this.note.createdAt)
+            this.t_modified.innerText = dateToText(this.note.modifiedAt)
+        }
+
+        updateAll(){
+            this.updateId()
+            this.updateTitle()
+            this.updateDescription()
+            this.updateDates()
+        }
+        //#endregion
+
+        refreshEditMode(){
+            this.i_title.toggleAttribute('readonly', !isHardEdit())
+            this.i_description.toggleAttribute('readonly', !isHardEdit())
+        }
     }
     //#endregion
 
