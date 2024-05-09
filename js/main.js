@@ -179,11 +179,22 @@ function getProject(id){
     }))
 }
 
-function saveProject(id, json){
+function saveProject(json, id){
     return dbSetup.then(() => new Promise((resolve, reject) => {
         const transaction = db.transaction(["projects"], "readwrite")
         const projectStore = transaction.objectStore("projects")
-        const req = projectStore.put(json, id)
+        const req = id ? projectStore.put(json, id) : projectStore.add(json)
+
+        req.onsuccess = (e) => resolve(e.target.result)
+        req.onerror = (e) => reject(e.target.error)
+    }))
+}
+
+function deleteProject(id){
+    return dbSetup.then(() => new Promise((resolve, reject) => {
+        const transaction = db.transaction(["projects"], "readwrite")
+        const projectStore = transaction.objectStore("projects")
+        const req = projectStore.delete(id)
 
         req.onsuccess = resolve
         req.onerror = (e) => reject(e.target.error)
@@ -363,5 +374,5 @@ function deleteConfirmation(prompt, onConfirm, onCancel){
 //#endregion
 
 setTimeout(() => {
-    navigateTo("projectpage", {projectId: 69})
+    navigateTo("searchpage")
 }, 10)

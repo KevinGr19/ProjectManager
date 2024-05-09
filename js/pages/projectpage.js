@@ -60,7 +60,7 @@ page_loads["projectpage"] = (args) => {
 
         // Save project
         let json = project.toJSON()
-        await saveProject(args.projectId, json)
+        await saveProject(json, args.projectId)
     }
 
     async function loadProject(){
@@ -95,6 +95,7 @@ page_loads["projectpage"] = (args) => {
             this.d_progressFill = this.d_progressBar.querySelector("span")
             this.d_tasks = root.querySelector("#taches-projet")
             this.d_carousel = root.querySelector("#projet-carousel")
+            this.b_deleteProject = root.querySelector("#button-delete-project")
 
             this.t_noTags = this.d_tags.create('p>Aucune')
 
@@ -112,6 +113,13 @@ page_loads["projectpage"] = (args) => {
                 let after = getElementAfterDragged(this.d_tasks, e.clientY)
                 if(after) this.d_tasks.insertBefore(draggedVM.root, after)
                 else this.d_tasks.appendChild(draggedVM.root)
+            })
+
+            this.b_deleteProject.addEventListener('click', () => {
+                let fixedId = args.projectId
+                deleteConfirmation(`Êtes-vous sûr de vouloir supprimer le projet "<b>${this.project.title}</b>" ?
+                    <br><br>L'action est irréversible !`,
+                    () => { deleteProject(fixedId).then(() => goHome()) })
             })
 
             this.tasksVM = []
@@ -222,13 +230,11 @@ page_loads["projectpage"] = (args) => {
             this.i_title.toggleAttribute('readonly', !isHardEdit())
             this.i_description.toggleAttribute('readonly', !isHardEdit())
             this.b_addTask.classList.toggle('hide', !isHardEdit())
-            this.b_manageTags.classList.toggle('hide', !isHardEdit())
 
             this.tasksVM.forEach(vm => vm.refreshEditMode())
 
             this.carouselVM.setEditMode(isHardEdit())
             this.lightboxTaskVM?.refreshEditMode()
-            if(this.lightboxTagsVM) closeLightbox()
         }
 
         openTask(task){
@@ -291,8 +297,6 @@ page_loads["projectpage"] = (args) => {
         }
 
         openTags(){
-            if(!isHardEdit()) return
-
             if(!this.lightboxTagsVM){
                 loadLightbox("tag-lightbox", {
                     onOpen: () => {
@@ -614,60 +618,6 @@ page_loads["projectpage"] = (args) => {
 
     }
 
-    class TagVM{
-
-        #tagId = null
-
-        constructor(root){
-            this.root = root.create('div.etiquette')
-            this.t_name = this.root.create('p')
-
-            this.root.addEventListener('contextmenu', (e) => {
-                e.preventDefault()
-                if(!this.tag) return
-
-                this.openContextMenu(e)
-            })
-        }
-
-        get tagId(){
-            return this.#tagId
-        }
-
-        set tagId(value){
-            this.#tagId = value
-        }
-
-        get tag(){
-            return tags.get(this.tagId)
-        }
-
-        update(){
-            this.root.style.backgroundColor = this.tag ? this.tag.color : 'black'
-            this.t_name.innerText = this.tag ? this.tag.name : '...'
-        }
-
-        openContextMenu(e){
-            openContextMenu(e.clientX, e.clientY, [
-                {
-                    label: "Modifier",
-                    action: () => {
-                        if(this.tag) editTagLB(this.tagId)
-                    }
-                },
-                {
-                    label: "Supprimer",
-                    action: () => {
-                        if(this.tag) deleteConfirmation(
-                            `Êtes-vous sûr de vouloir supprimer l'étiquette "<b>${this.tag.name ?? "Étiquette sans nom"}</b>" ?`,
-                            () => deleteTag(this.tagId).then(() => refreshTags())
-                        )
-                    }
-                }
-            ])
-        }
-    }
-
     class TagsLightboxVM{
 
         #project = null
@@ -740,9 +690,12 @@ page_loads["projectpage"] = (args) => {
         }
 
         swapTag(id){
+            if(isSoftEdit()) return
+
             if(this.project.tags.has(id)) this.project.tags.delete(id)
             else this.project.tags.add(id)
 
+            setEditMode(1)
             this.project.watcher.trigger('tags')
         }
 

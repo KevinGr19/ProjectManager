@@ -208,3 +208,60 @@ class CarouselVM{
     }
 
 }
+
+class TagVM{
+
+    #tagId = null
+
+    constructor(root){
+        this.root = root.create('div.etiquette')
+        this.t_name = this.root.create('p')
+
+        this.root.addEventListener('contextmenu', (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if(!this.tag) return
+
+            this.openContextMenu(e)
+        })
+    }
+
+    get tagId(){
+        return this.#tagId
+    }
+
+    set tagId(value){
+        this.#tagId = value
+    }
+
+    get tag(){
+        return tags.get(this.tagId)
+    }
+
+    update(){
+        this.root.style.backgroundColor = this.tag ? this.tag.color : 'black'
+        this.t_name.innerText = this.tag ? this.tag.name : '...'
+    }
+
+    openContextMenu(e){
+        openContextMenu(e.clientX, e.clientY, [
+            {
+                label: "Modifier l'étiquette",
+                action: () => {
+                    if(this.tag) editTagLB(this.tagId)
+                }
+            },
+            {
+                label: "Supprimer l'étiquette",
+                action: () => {
+                    if(!this.tag) return
+                    let fixedId = this.tagId
+                    deleteConfirmation(
+                        `Êtes-vous sûr de vouloir supprimer l'étiquette "<b>${this.tag.name}</b>" ?`,
+                        () => deleteTag(fixedId).then(() => refreshTags())
+                    )
+                }
+            }
+        ])
+    }
+}

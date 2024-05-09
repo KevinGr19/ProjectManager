@@ -23,12 +23,12 @@
 
 .fw{width: 100%;}
 
-.c{justify-content: center;}
-.a{align-items: center;}
-.sj{justify-content: start;}
-.sa{align-items: start;}
-.ej{justify-content: end;}
-.ea{align-items: end;}
+.c{justify-content: center !important;}
+.a{align-items: center !important;}
+.sj{justify-content: start !important;}
+.sa{align-items: start !important;}
+.ej{justify-content: end !important;}
+.ea{align-items: end !important;}
 
 .around{justify-content: space-around;}
 

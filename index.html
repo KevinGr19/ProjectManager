@@ -18,7 +18,7 @@
         <h1 class="title">Projets</h1>
         <div class="searchbar">
             <input type="text" placeholder="Rechercher..." style="width: 400px;">
-            <button>Rechercher</button>
+            <button class="valid" id="button-create-project">Nouveau projet</button>
         </div>
 
         <div id="search-results" class="preview-cards">
@@ -26,12 +26,12 @@
     </div>
 
     <div class="page" id="projectpage">
-        <h1 class="title">FPS Multijoueur Unity</h1>
+        <h1 class="title"></h1>
         <article class="row c bgap">
             <div class="column sgap" style="width: 700px;">
                 <div class="row mgap">
                     <div class="labelbox">
-                        <input type="text" id="titre-projet" style="width: 250px;" placeholder="Entrez le titre ici...">
+                        <input type="text" id="titre-projet" style="width: 300px;" placeholder="Entrez le titre ici...">
                         <label for="titre-projet">Titre du projet</label>
                     </div>
                     <div class="labelbox" style="flex: 1;">
@@ -39,7 +39,7 @@
                         </div>
                         <label class="row sgap">
                             <p>Étiquettes</p>
-                            <p class="link hide" id="manage-tags">Gérer</p>
+                            <p class="link" id="manage-tags">Gérer</p>
                         </label>
                     </div>
                 </div>
@@ -74,7 +74,7 @@
             </div>
         </article>
         
-        <article class="column a" style="padding-bottom: 80px;">
+        <article class="column a">
             <div class="row c bgap mmar fw">
                 <h2>Tâches à faire</h2>
                 <div id="progressbar" class="row sgap hide" style="width: 50%; max-width: 600px;">
@@ -88,6 +88,13 @@
             <p id="taches-compteur" class="mmar">0 tâches</p>
             <div id="taches-projet" class="taches" style="width: 80%; max-width: 1200px;"></div>
             <button class="bmar valid hide" id="taches-ajout">Ajouter</button>
+        </article>
+
+        <article class="column a" style="padding-bottom: 80px;">
+            <h2>Actions</h2>
+            <div class="column a sgap bmar">
+                <button class="red" id="button-delete-project">Supprimer le projet</button>
+            </div>
         </article>
 
         <p class="floating_button left clickable" onclick="navigateTo('searchpage')">< Retour</p>
@@ -201,19 +208,34 @@
                     <label for="lb-tag-edit-color">Couleur</label>
                 </div>
             </div>
-            <button class="valid" id="lb-tag-edit-save">Modifier</button>
+            <div class="row c">
+                <button class="valid" id="lb-tag-edit-save">Modifier</button>
+            </div>
         </div>
     </div>
 
     <div class="lightbox" id="delete-confirmation">
-        <div class="column bmar sgap" style="min-height: 250px; max-width: 600px;">
+        <div class="column bmar sgap" style="min-height: 250px; max-width: 700px;">
             <h2 id="lb-delete-title">Supprimer ?</h2>
             <div id="lb-delete-prompt" style="flex: 1;">
-                <p>Êtes-vous sûr de vouloir supprimer l'étiquette "<b>JavaScript</b>" ?</p>
+                <p>Prompt</p>
             </div>
             <div class="row jend sgap" style="margin-top: 30px;">
                 <button id="lb-delete-cancel">Annuler</button>
                 <button id="lb-delete-confirm" class="red">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="lightbox" id="create-project">
+        <div class="column bmar sgap">
+            <h2>Créer un projet</h2>
+            <div class="labelbox">
+                <input type="text" id="lb-create-project-name" placeholder="Entrez le titre ici..." style="min-width: 300px;">
+                <label for="lb-create-project-title">Titre du projet</label>
+            </div>
+            <div class="row c">
+                <button class="valid" id="lb-create-project-new">Créer</button>
             </div>
         </div>
     </div>

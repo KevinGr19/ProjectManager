@@ -1,34 +1,130 @@
 page_loads["searchpage"] = (args) => {
+
     let projects = null
+    let projectIcons = new Map()
 
     const d_searchResults = container.querySelector("#search-results")
 
-    function createProjectResult(id, value){
-        let d_card = d_searchResults.create('div.preview-card')
+    class ProjectIconVM{
 
-        let d_imageMask = d_card.create('div.image-mask')
-        let t_title = d_card.create('p.title')
-        let d_tags = d_card.create('div.etiquettes.c')
+        #id = null
 
-        let img = d_imageMask.create('img')
-        t_title.innerText = value.title
-        value.tags.forEach(tagId => {
-            let tag = tags.get(tagId)
-            let d_tag = d_tags.create("div.etiquette")
+        constructor(root){
+            this.root = root.create('div.preview-card')
+            this.d_imageMask = this.root.create('div.image-mask')
+            this.t_title = this.root.create('p.title')
+            this.d_tags = this.root.create('div.etiquettes.c')
 
-            d_tag.innerText = tag.name
-            d_tag.style.backgroundColor = tag.color
+            this.img = this.d_imageMask.create('img')  
+
+            this.root.addEventListener('click', () => {
+                if(this.id) navigateTo("projectpage", {projectId: this.id})
+            })
+
+            this.root.addEventListener('contextmenu', (e) => {
+                e.preventDefault()
+                openContextMenu(e.clientX, e.clientY, [
+                    {
+                        label: "Supprimer le projet",
+                        action: () => this.askDelete()
+                    }
+                ])
+            })
+
+            this.tagsVM = []
+        }
+
+        get id() { return this.#id }
+        set id(value){
+            this.#id = value
+            this.updateAll()
+        }
+
+        get project(){
+            return this.id ? projects.get(this.id) : null
+        }
+
+        //#region Update
+        updateTitle(){
+            this.t_title.innerText = this.project.title
+        }
+
+        updateTags(){
+            this.tagsVM.length = 0
+            this.d_tags.innerHTML = ''
+            
+            this.project.tags.forEach(tagId => {
+                let tagVM = new TagVM(this.d_tags)
+                this.tagsVM.push(tagVM)
+
+                tagVM.tagId = tagId
+                tagVM.update()
+            })
+        }
+
+        updateAll(){
+            this.updateTitle()
+            this.updateTags()
+        }
+        //#endregion
+
+        askDelete(){
+            if(!this.id) return
+            let fixedId = this.id
+
+            deleteConfirmation(`Êtes-vous sûr de vouloir supprimer le projet "<b>${this.project.title}</b>" ?
+                <br><br>L'action est irréversible !`,
+                () => { deleteProject(fixedId).then(() => this.deleteFromPage()) })
+        }
+
+        deleteFromPage(){
+            this.root.remove()
+            projectIcons.delete(this.id)
+        }
+    }
+
+    function createProjectLB(){
+        loadLightbox("create-project", {
+            onOpen: () => {
+                const i_titre = lightbox.querySelector("#lb-create-project-name")
+                const b_create = lightbox.querySelector("#lb-create-project-new")
+
+                b_create.addEventListener('click', () => {
+                    let project = new Project()
+                    project.title = i_titre.value
+
+                    b_create.disabled = true
+                    saveProject(project.toJSON())
+                        .then(res => navigateTo("projectpage", {projectId: res}))
+                        .catch(err => {
+                            b_create.disabled = false
+                        })
+                })
+            },
+            backClose: true
         })
-
-        d_card.addEventListener('click', () => navigateTo("projectpage", {projectId: id}))
     }
 
     async function updateResults(){
         projects = await getProjects()
-        tags = await getTags()
+        await refreshTags()
 
         d_searchResults.innerHTML = ''
-        projects.forEach((value, key) => createProjectResult(key, value))
+        projects.keys().forEach(projId => {
+            if(!projectIcons.has(projId)){
+                let projVM = new ProjectIconVM(d_searchResults)
+                projectIcons.set(projId, projVM)
+                projVM.id = projId
+            }
+            else projectIcons.get(projId).updateAll()
+        })
+    }
+
+    const b_newProject = container.querySelector("#button-create-project")
+    b_newProject.addEventListener('click', () => createProjectLB())
+
+    pageEvents["tagsrefreshed"] = () => {
+        projectIcons.values().forEach(vm => vm.updateTags())
     }
 
     updateResults()
