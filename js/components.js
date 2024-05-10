@@ -128,12 +128,42 @@ class CarouselVM{
         this.carousel = new Carousel(this.carouselRoot)
         this.imagesToAdd = new Map()
 
-        this.d_addimagefile = this.root.querySelector('.addimagefile')
-        this.i_addimagefile = this.d_addimagefile.querySelector('input[type=file]')
+        this.d_addimage = this.root.querySelector('.addimage')
+        this.i_addimagefile = this.d_addimage.querySelector('input[type=file]')
+        this.b_addimageurl = this.d_addimage.querySelector(".addimageurl")
+
+        this.carousel.projectedImage.addEventListener('click', () => {
+            const src = this.carousel.projectedImage.getAttribute('src')
+            if(!src) return
+
+            loadLightbox("image-detail", {
+                onOpen: () => {
+                    const img = lightbox.querySelector("img")
+                    img.setAttribute('src', src)
+                },
+                backClose: true,
+                noScroll: true
+            })
+        })
 
         this.i_addimagefile.addEventListener('change', (e) => {
             const files = e.currentTarget.files
             for(let file of files) this.addImageByFile(file)
+        })
+
+        this.b_addimageurl.addEventListener('click', () => {
+            loadLightbox("add-image-url", {
+                onOpen: () => {
+                    const i_url = lightbox.querySelector("#lb-add-image-url-input")
+                    const b_save = lightbox.querySelector("#lb-add-image-url-save")
+
+                    b_save.addEventListener('click', () => {
+                        this.addImageByURL(i_url.value)
+                        backLightbox()
+                    })
+                },
+                backClose: true
+            })
         })
 
         this.canDelete = () => true
@@ -206,14 +236,24 @@ class CarouselVM{
     addImageByFile(file){
         let url = URL.createObjectURL(file)
         this.imagesToAdd.set(url, file)
+        this.addImage(url)
+    }
 
+    addImageByURL(url){
+        if(this.images.has(url)) return
+
+        this.images.add(url)
+        this.addImage(url)
+    }
+
+    addImage(url){
         let img = this.carousel.addImage({src: url})
         this.carousel.select(img.carouselId)
         this.addContextMenuListener(img, url)
     }
 
     setEditMode(mode){
-        this.d_addimagefile.classList.toggle('hide', !mode)
+        this.d_addimage.classList.toggle('hide', !mode)
         this.editMode = mode
     }
 

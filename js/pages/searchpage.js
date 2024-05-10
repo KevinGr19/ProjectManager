@@ -62,9 +62,19 @@ page_loads["searchpage"] = (args) => {
             })
         }
 
+        updateImage(){
+            if(this.project.thumbnail){
+                if(typeof this.project.thumbnail === 'string')
+                    this.img.setAttribute('src', this.project.thumbnail)
+                else
+                    getImageURL(this.project.thumbnail).then(res => this.img.setAttribute('src', res))
+            }
+        }
+
         updateAll(){
             this.updateTitle()
             this.updateTags()
+            this.updateImage()
         }
         //#endregion
 
@@ -192,6 +202,16 @@ page_loads["searchpage"] = (args) => {
     d_tagsFilterHeader.addEventListener('click', () => {
         filterTagsOpen = !filterTagsOpen
         updateFilterTagsVisibility()
+    })
+
+    d_tagsFilterHeader.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+        openContextMenu(e.clientX, e.clientY, [
+            {
+                label: "Créer une étiquette",
+                action: () => editTagLB()
+            }
+        ])
     })
 
     i_searchBar.addEventListener('keydown', e => {

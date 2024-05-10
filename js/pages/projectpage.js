@@ -76,9 +76,23 @@ page_loads["projectpage"] = (args) => {
             note.imagesToAdd.clear()
         }
 
+        // Delete images
+        let imagesToDelete = new Set()
+        imagesToDelete.addToken = (token) => {
+            if(typeof token === 'number') imagesToDelete.add(token)
+        }
+
+        original_project.images.forEach(token => imagesToDelete.addToken(token))
+        original_project.notes.forEach(note => note.images.forEach(token => imagesToDelete.addToken(token)))
+
+        project.images.forEach(token => imagesToDelete.delete(token))
+        project.notes.forEach(note => note.images.forEach(token => imagesToDelete.delete(token)))
+        
         // Save project
         let json = project.toJSON()
         await saveProject(json, args.projectId)
+
+        await clearUnusedImages(imagesToDelete)
     }
 
     async function loadProject(){
@@ -385,13 +399,16 @@ page_loads["projectpage"] = (args) => {
         openNote(note){
             if(!this.lightboxNoteVM){
                 loadLightbox("note-lightbox", {
+                    onOpen: () => {
+                        this.lightboxNoteVM = new NoteLightBoxVM(lightbox)
+                        this.lightboxNoteVM.note = note
+                        this.lightboxNoteVM.refreshEditMode()
+                    },
                     onClose: () => {
                         this.lightboxNoteVM.removeBinding()
                         this.lightboxNoteVM = null
                     }
                 })
-                this.lightboxNoteVM = new NoteLightBoxVM(lightbox)
-                this.lightboxNoteVM.refreshEditMode()
             }
 
             this.lightboxNoteVM.note = note
@@ -977,6 +994,12 @@ page_loads["projectpage"] = (args) => {
         checkbox_buttons.classList.toggle('hide', !isSoftEdit())
 
         projectVM.refreshEditMode()
+        
+        // Close image URL lightbox
+        if(!isHardEdit()){
+            let currLb = lightboxHistory[lightboxHistory.length-1]
+            if(currLb && currLb.id == "add-image-url") backLightbox()
+        }
     }
 
     function cancelChanges(){

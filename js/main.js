@@ -58,6 +58,7 @@ function refreshCurrentLightbox(){
     }
     
     overlay.classList.add('show')
+    lightbox.classList.toggle('noscroll', lb.options && lb.options.noScroll)
 
     lightbox.innerHTML = lightboxes[lb.id]
     if(lb.options && lb.options.onOpen) lb.options.onOpen()
@@ -94,7 +95,7 @@ closeButton(lightbox.parentNode, () => {
     let lb = getCurrentLightbox()
     if(lb && lb.options && lb.options.backClose) backLightbox()
     else closeLightbox()
-}, '15px')
+}, '20px')
 //#endregion
 
 //#region Context menu
@@ -160,6 +161,7 @@ function getProjects(){
                 projects.set(cursor.primaryKey, {
                     title: cursor.value.title,
                     tags: cursor.value.tags,
+                    thumbnail: cursor.value.images.values().next().value
                 })
                 cursor.continue()
             }
@@ -269,7 +271,11 @@ function deleteTagFromProjects(id){
                 let project = cursor.value
                 if(project.tags.has(id)){
                     project.tags.delete(id)
-                    projectEditPromises.push(cursor.update(project))
+                    projectEditPromises.push(new Promise((_resolve, _reject) => {
+                        let subReq = cursor.update(project)
+                        subReq.onsuccess = _resolve
+                        subReq.onerror = (_e) => _reject(_e.target.error)
+                    }))
                 }
                 cursor.continue()
             }
@@ -310,6 +316,44 @@ function getImageURL(id){
             
             imageCache[id] = URL.createObjectURL(e.target.result)
             resolve(imageCache[id])
+        }
+        req.onerror = (e) => reject(e.target.error)
+    }))
+}
+
+function clearUnusedImages(imageIds){
+    imageIds = new Set(imageIds)
+    if(!imageIds.size) return
+
+    return dbSetup.then(() => new Promise((resolve, reject) => {
+        const transaction = db.transaction(["projects", "images"], "readwrite")
+        const projectStore = transaction.objectStore("projects")
+        const imageStore = transaction.objectStore("images")
+        const req = projectStore.openCursor()
+
+        req.onsuccess = (e) => {
+            let cursor = e.target.result
+            if(cursor){
+                let project = cursor.value
+                project.images.forEach(token => imageIds.delete(token))
+                project.notes.forEach(note => {
+                    note.images.forEach(token => imageIds.delete(token))
+                })
+                cursor.continue()
+            }
+            else{
+                if(!imageIds.size) resolve()
+                
+                let promises = []
+                imageIds.forEach(id => {
+                    promises.push(new Promise((_resolve, _reject) => {
+                        let subReq = imageStore.delete(id)
+                        subReq.onsuccess = _resolve
+                        subReq.onerror = (_e) => _reject(_e.target.error)
+                    }))
+                })
+                Promise.all(promises).then(() => resolve())
+            }
         }
         req.onerror = (e) => reject(e.target.error)
     }))
@@ -378,4 +422,5 @@ const PROJECT_DELETE_MSG = "Êtes-vous sûr de vouloir supprimer le projet \"<b>
 
 setTimeout(() => {
     goHome()
+    // navigateTo("projectpage", {projectId: 69})
 }, 10)

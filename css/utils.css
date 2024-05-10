@@ -38,6 +38,7 @@
 }
 
 .noresize{resize: none;}
+.noscroll{overflow-x: hidden !important; overflow-y: hidden !important;}
 
 .corner{
     position: absolute;

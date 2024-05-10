@@ -77,9 +77,12 @@
                     <!-- <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
                     <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling"> -->
                 </carousel>
-                <div class="fileinput hide addimagefile" id="projet-add-image-container">
-                    <input type="file" id="projet-add-image">
-                    <label for="projet-add-image" class="valid">+</label>
+                <div class="row c mgap addimage hide">
+                    <div class="fileinput addimagefile" id="projet-add-image-container">
+                        <input type="file" id="projet-add-image">
+                        <label for="projet-add-image" class="valid">+</label>
+                    </div>
+                    <button class="valid addimageurl">URL</button>
                 </div>
                 <label>Images</label>
             </div>
@@ -103,8 +106,8 @@
 
         <article class="column a">
             <h2>Notes de projet</h2>
-            <p id="notes-counter">0 notes</p>
-            <div class="notes bmar" id="notes-projet"></div>
+            <p id="notes-counter" class="mmar">0 notes</p>
+            <div class="notes" id="notes-projet"></div>
             <button class="bmar valid hide" id="notes-ajout">Ajouter</button>
         </article>
 
@@ -208,7 +211,7 @@
                 </div>
             </div>
             <div class="row jend" style="width: 100%;">
-                <button class="valid" id="lb-tag-new">Créer une étiquette</button>
+                <button class="valid spad" id="lb-tag-new">Créer une étiquette</button>
             </div>
         </div>
     </div>
@@ -289,14 +292,34 @@
                         <!-- <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
                         <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling"> -->
                     </carousel>
-                    <div class="fileinput hide addimagefile" id="projet-add-image-container">
-                        <input type="file" id="lb-note-add-image">
-                        <label for="lb-note-add-image" class="valid">+</label>
+                    <div class="row c mgap addimage hide">
+                        <div class="fileinput addimagefile" id="projet-add-image-container">
+                            <input type="file" id="lb-note-add-image">
+                            <label for="lb-note-add-image" class="valid">+</label>
+                        </div>
+                        <button class="valid addimageurl">URL</button>
                     </div>
                     <label>Images</label>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="lightbox" id="add-image-url">
+        <div class="column bmar sgap">
+            <h2>Ajouter une image par URL</h2>
+            <div class="labelbox">
+                <input type="text" id="lb-add-image-url-input" placeholder="Entrez l'URL ici..." style="width: 500px;">
+                <label for="lb-add-image-url-input">URL de l'image</label>
+            </div>
+            <div class="row c">
+                <button class="valid" id="lb-add-image-url-save">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="lightbox" id="image-detail">
+        <img style="max-height: inherit; max-width: inherit;">
     </div>
 
     <div id="contextmenu" class="popup hide">
