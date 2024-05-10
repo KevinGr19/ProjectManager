@@ -219,16 +219,39 @@ article{
 }
 
 .searchbar{
-    align-self: stretch;
+    max-width: 1500px;
+    width: calc(100% - 40px);
 
-    padding: 10px;
     margin: 20px;
 
-    background: var(--sec-bg);
-
     display: flex;
+    flex-direction: column;
     justify-content: center;
-    gap: 20px;
+    align-items: stretch;
+
+    gap: 10px;
+}
+
+.searchbar > *{
+    background: var(--sec-bg);
+    border: solid 1px var(--border);
+}
+
+.etiquette_filter > *{
+    padding: 10px;
+}
+
+.etiquette_filter .etiquettes{
+    border-top: solid 1px var(--border);
+    margin: 0;
+}
+
+.etiquette_filter .header.open::before{
+    content: '▲ ';
+}
+
+.etiquette_filter .header:not(.open)::before{
+    content: '▼ ';
 }
 
 .preview-cards{
@@ -293,7 +316,7 @@ article{
     gap: 10px;
 }
 
-.etiquette[disabled]:not(:hover){
+.etiquette[disabled]{
     opacity: 0.3;
 }
 

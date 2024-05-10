@@ -17,9 +17,20 @@
     <div class="page" id="searchpage">
         <h1 class="title">Projets</h1>
         <div class="searchbar">
-            <input type="text" placeholder="Rechercher..." style="width: 400px;">
-            <button class="valid" id="button-create-project">Nouveau projet</button>
+            <div class="row c mgap spad">
+                <div class="row c mgap" style="flex: 1;">
+                    <button class="spad" id="reset-filters">Réinitialiser les filtres</button>
+                    <input type="text" id="search-bar" placeholder="Rechercher..." style="width: 400px;">
+                </div>
+                <button class="valid spad" id="button-create-project">Nouveau projet</button>
+            </div>
+            <div class="etiquette_filter">
+                <div class="header clickable" id="tags-filter-header">Etiquettes : <span id="tags-filter-counter">...</span></div>
+                <div class="etiquettes hide" id="tags-filter"></div>
+            </div>
         </div>
+
+        <p id="project-counter">0 résultats</p>
 
         <div id="search-results" class="preview-cards">
         </div>

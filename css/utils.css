@@ -50,7 +50,7 @@
     height: 100%;
 }
 
-.hide{display: none;}
+.hide{display: none !important;}
 
 .floating_button{
     position: fixed;

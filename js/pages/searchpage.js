@@ -3,8 +3,6 @@ page_loads["searchpage"] = (args) => {
     let projects = null
     let projectIcons = new Map()
 
-    const d_searchResults = container.querySelector("#search-results")
-
     class ProjectIconVM{
 
         #id = null
@@ -32,6 +30,8 @@ page_loads["searchpage"] = (args) => {
             })
 
             this.tagsVM = []
+
+            this.match = true
         }
 
         get id() { return this.#id }
@@ -79,6 +79,15 @@ page_loads["searchpage"] = (args) => {
         deleteFromPage(){
             this.root.remove()
             projectIcons.delete(this.id)
+
+            filterResults()
+        }
+
+        filter(value){
+            this.match = this.project.title.toLowerCase().startsWith(value.toLowerCase())
+            this.match &= !selectedTags.size || [...selectedTags].every(tagId => this.project.tags.has(tagId))
+            this.root.classList.toggle('hide', !this.match)
+            return this.match
         }
     }
 
@@ -104,6 +113,45 @@ page_loads["searchpage"] = (args) => {
         })
     }
 
+    function buildFilterTags(){
+        d_tagsFilter.innerHTML = ''
+        filterTagsVM.length = 0
+
+        tags.keys().forEach(tagId => {
+            let tagVM = new TagVM(d_tagsFilter)
+            filterTagsVM.push(tagVM)
+
+            tagVM.tagId = tagId
+            tagVM.update()
+            updateTagSelection(tagVM)
+
+            tagVM.root.classList.add('clickable')
+            tagVM.root.addEventListener('click', () => toggleFilterTag(tagVM.tagId))
+        })
+    }
+
+    function updateFilterTags(){
+        filterTagsVM.forEach(vm => updateTagSelection(vm))
+        t_filterTagsCounter.innerText = `${selectedTags.size}/${filterTagsVM.length}`
+    }
+
+    function updateTagSelection(tagVM){
+        tagVM.root.toggleAttribute('disabled', selectedTags.size && !selectedTags.has(tagVM.tagId))
+    }
+
+    function toggleFilterTag(tagId){
+        if(!selectedTags.delete(tagId)) selectedTags.add(tagId)
+        updateFilterTags()
+        filterResults()
+    }
+
+    function filterResults(){
+        let results = 0
+        projectIcons.values().forEach(icon => results += icon.filter(i_searchBar.value) ? 1 : 0)
+
+        t_resultCounter.innerText = `${results} résultats`
+    }
+
     async function updateResults(){
         projects = await getProjects()
         await refreshTags()
@@ -119,12 +167,57 @@ page_loads["searchpage"] = (args) => {
         })
     }
 
+    function updateFilterTagsVisibility(){
+        d_tagsFilterHeader.classList.toggle('open', filterTagsOpen)
+        d_tagsFilter.classList.toggle('hide', !filterTagsOpen)
+    }
+
+    let filterTagsOpen = false
+    
+    const d_tagsFilter = container.querySelector("#tags-filter")
+    const d_tagsFilterHeader = container.querySelector("#tags-filter-header")
+    const t_filterTagsCounter = container.querySelector("#tags-filter-counter")
+    
+    const i_searchBar = container.querySelector("#search-bar")
+    const b_resetFilters = container.querySelector("#reset-filters")
+
+    const d_searchResults = container.querySelector("#search-results")
+    const t_resultCounter = container.querySelector("#project-counter")
+
+    const filterTagsVM = []
+    const selectedTags = new Set()
+
+    d_tagsFilterHeader.addEventListener('click', () => {
+        filterTagsOpen = !filterTagsOpen
+        updateFilterTagsVisibility()
+    })
+
+    i_searchBar.addEventListener('keydown', e => {
+        setTimeout(() => filterResults(), 1)
+    })
+
+    b_resetFilters.addEventListener('click', () => {
+        i_searchBar.value = ""
+        selectedTags.clear()
+
+        updateFilterTags()
+        filterResults()
+    })
+
     const b_newProject = container.querySelector("#button-create-project")
     b_newProject.addEventListener('click', () => createProjectLB())
 
     pageEvents["tagsrefreshed"] = () => {
+        selectedTags.forEach(tagId => {
+            if(!tags.has(tagId)) selectedTags.delete(tagId)
+        })
+
+        buildFilterTags()
+        updateFilterTags()
+        filterResults()
         projectIcons.values().forEach(vm => vm.updateTags())
     }
 
-    updateResults()
+    updateFilterTagsVisibility()
+    updateResults().then(() => filterResults())
 }

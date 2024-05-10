@@ -134,7 +134,10 @@ page_loads["projectpage"] = (args) => {
                 else this.d_tasks.appendChild(draggedVM.root)
             })
 
-            this.b_addNote.addEventListener('click', () => this.createNewNote())
+            this.b_addNote.addEventListener('click', () => {
+                let newNote = this.createNewNote()
+                this.openNote(newNote)
+            })
 
             this.b_deleteProject.addEventListener('click', () => {
                 let fixedId = args.projectId
@@ -376,6 +379,7 @@ page_loads["projectpage"] = (args) => {
             let noteVM = this.addNote(newNote)
 
             this.updateNoteVisuals()
+            return newNote
         }
 
         openNote(note){
