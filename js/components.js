@@ -13,6 +13,7 @@ class Carousel{
         this.root.innerHTML = ''
 
         this.projected = this.root.create('div.projected.image-mask')
+        this.t_noImage = this.root.create('p.comment.fw>Aucune image.')
         this.imageMasks = this.root.create('div.images')
 
         this.projectedImage = this.projected.create('img')
@@ -88,18 +89,25 @@ class Carousel{
         if(!Object.keys(this.images).length){
             this.projectedImage.removeAttribute('src')
             this.projectedImage.removeAttribute('alt')
+
+            this.projected.classList.add('hide')
+            this.t_noImage.classList.remove('hide')
         }
+        else{
+            this.projected.classList.remove('hide')
+            this.t_noImage.classList.add('hide')
 
-        else if(this.selectedId == id && this.images[id]){
-            let image = this.images[id].image
-            let src = image.getAttribute('src')
-            let alt = image.getAttribute('alt')
-
-            if(src) this.projectedImage.setAttribute('src', src)
-            else this.projectedImage.removeAttribute('src')
-
-            if(alt) this.projectedImage.setAttribute('alt', alt)
-            else this.projectedImage.removeAttribute('alt')
+            if(this.selectedId == id && this.images[id]){
+                let image = this.images[id].image
+                let src = image.getAttribute('src')
+                let alt = image.getAttribute('alt')
+    
+                if(src) this.projectedImage.setAttribute('src', src)
+                else this.projectedImage.removeAttribute('src')
+    
+                if(alt) this.projectedImage.setAttribute('alt', alt)
+                else this.projectedImage.removeAttribute('alt')
+            }
         }
     }
 
@@ -136,9 +144,11 @@ class CarouselVM{
 
     get images() { return this.#images }
     set images(value){
+        if(this.images){
+            this.imagesToAdd.keys().forEach(url => URL.revokeObjectURL(url))
+            this.imagesToAdd.clear()
+        }
         this.#images = value
-        this.imagesToAdd.keys().forEach(url => URL.revokeObjectURL(url))
-        this.imagesToAdd.clear()
         this.updateAll()
     }
 

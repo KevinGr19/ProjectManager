@@ -60,7 +60,7 @@
 
             <div id="projet-carousel" class="column c a sgap labelbox" style="
                 min-width: 200px;
-                max-width: 400px;
+                max-width: 500px;
                 flex: 1;">
                 <carousel id="project-images" style="width: 100%;">
                     <!-- <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
@@ -143,7 +143,7 @@
                 </div>
             </div>
             
-            <div class="row sa bgap wrap">
+            <div class="row c sa bgap wrap">
                 <!-- Infos tâche -->
                 <div class="column sgap">
                     <div class="labelbox">
@@ -250,23 +250,40 @@
     <div class="lightbox" id="note-lightbox">
         <div class="column bmar sgap">
             <h2 id="lb-note-title">Note ...</h2>
-            <div class="labelbox">
-                <input type="text" id="note_title" placeholder="Entrez le nom ici..."
-                    style="min-width: 500px;">
-                <label for="tache_nom">Nom de la note</label>
-            </div>
-            <div class="labelbox">
-                <textarea id="note_description" cols="60" rows="10" class="noresize"
-                placeholder="Entrez la description ici..."></textarea>
-                <label for="tache_description">Description de la note</label>
-            </div>
-            <div class="textval">
-                <p>Création :</p>
-                <p id="note_created"></p>
-            </div>
-            <div class="textval">
-                <p>Dernière modification :</p>
-                <p id="note_modified"></p>
+            <div class="row c sa bgap wrap">
+                <div class="column sgap">
+                    <div class="labelbox">
+                        <input type="text" id="note_title" placeholder="Entrez le nom ici..."
+                            style="min-width: 500px;">
+                        <label for="tache_nom">Nom de la note</label>
+                    </div>
+                    <div class="labelbox">
+                        <textarea id="note_description" cols="60" rows="15" class="noresize"
+                        placeholder="Entrez la description ici..."></textarea>
+                        <label for="tache_description">Description de la note</label>
+                    </div>
+                    <div class="textval">
+                        <p>Création :</p>
+                        <p id="note_created"></p>
+                    </div>
+                    <div class="textval">
+                        <p>Dernière modification :</p>
+                        <p id="note_modified"></p>
+                    </div>
+                </div>
+
+                <div id="lb-note-carousel" class="column c a sgap labelbox" style="
+                    width: 400px;">
+                    <carousel id="lb-note-images" style="width: 100%;">
+                        <!-- <img src="https://unity.com/sites/default/files/styles/810_scale_width/public/2023-01/8-5%20GraphicsBuffersTower%20VFX.jpg?itok=FXoowMCi" alt="Unity VFX">
+                        <img src="https://docs.blender.org/manual/en/latest/_images/modeling_meshes_primitives_all.png" alt="Blender Modelling"> -->
+                    </carousel>
+                    <div class="fileinput hide addimagefile" id="projet-add-image-container">
+                        <input type="file" id="lb-note-add-image">
+                        <label for="lb-note-add-image" class="valid">+</label>
+                    </div>
+                    <label>Images</label>
+                </div>
             </div>
         </div>
     </div>

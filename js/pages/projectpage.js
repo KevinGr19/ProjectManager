@@ -21,6 +21,7 @@ page_loads["projectpage"] = (args) => {
 
         for(let i in project.notes){
             project.notes[i] = Watcher.toWatcherProxy(project.notes[i])
+            project.notes[i].imagesToAdd = new Map()
         }
     }
     
@@ -65,6 +66,14 @@ page_loads["projectpage"] = (args) => {
         for(let file of projectVM.carouselVM.imagesToAdd.values()){
             let imgId = await saveImage(file)
             project.images.add(imgId)
+        }
+
+        for(let note of project.notes){
+            for(let file of note.imagesToAdd.values()){
+                let imgId = await saveImage(file)
+                note.images.add(imgId)
+            }
+            note.imagesToAdd.clear()
         }
 
         // Save project
@@ -358,6 +367,8 @@ page_loads["projectpage"] = (args) => {
             if(!isHardEdit()) return
 
             let newNote = Watcher.toWatcherProxy(new Note(project))
+            newNote.imagesToAdd = new Map()
+
             newNote.id = this.project.notes.length + 1
             newNote.title = `Note n°${newNote.id}`
             this.project.notes.push(newNote)
@@ -855,6 +866,11 @@ page_loads["projectpage"] = (args) => {
             this.i_description = root.querySelector("#note_description")
             this.t_created = root.querySelector("#note_created")
             this.t_modified = root.querySelector("#note_modified")
+            this.d_carousel = root.querySelector("#lb-note-carousel")
+
+            this.carouselVM = new CarouselVM(this.d_carousel)
+            this.carouselVM.canDelete = () => !isSoftEdit()
+            this.carouselVM.deleteCallback = () => setEditMode(1)
 
             this.setupBindingTo()
         }
@@ -865,6 +881,9 @@ page_loads["projectpage"] = (args) => {
 
         set note(value){
             this.#note = value
+            this.carouselVM.imagesToAdd = this.note.imagesToAdd
+            this.carouselVM.images = this.note.images
+
             this.setupBindingFrom()
             this.updateAll()
         }
@@ -915,6 +934,7 @@ page_loads["projectpage"] = (args) => {
         refreshEditMode(){
             this.i_title.toggleAttribute('readonly', !isHardEdit())
             this.i_description.toggleAttribute('readonly', !isHardEdit())
+            this.carouselVM.setEditMode(isHardEdit())
         }
     }
     //#endregion
