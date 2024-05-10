@@ -100,6 +100,8 @@ page_loads["searchpage"] = (args) => {
                 b_create.addEventListener('click', () => {
                     let project = new Project()
                     project.title = i_titre.value
+                    project.createdAt = new Date()
+                    project.modifiedAt = new Date()
 
                     b_create.disabled = true
                     saveProject(project.toJSON())
