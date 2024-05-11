@@ -54,6 +54,8 @@ page_loads["searchpage"] = (args) => {
             this.d_tags.innerHTML = ''
             
             this.project.tags.forEach(tagId => {
+                if(!tags.has(tagId)) return
+
                 let tagVM = new TagVM(this.d_tags)
                 this.tagsVM.push(tagVM)
 

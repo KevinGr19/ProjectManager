@@ -58,7 +58,8 @@ function refreshCurrentLightbox(){
     }
     
     overlay.classList.add('show')
-    lightbox.classList.toggle('noscroll', lb.options && lb.options.noScroll)
+    if(lb.options && lb.options.noScroll) lightbox.classList.add('noscroll')
+    else lightbox.classList.remove('noscroll')
 
     lightbox.innerHTML = lightboxes[lb.id]
     if(lb.options && lb.options.onOpen) lb.options.onOpen()
@@ -89,6 +90,12 @@ function backLightbox(){
 function checkOnCloseLightbox(){
     let lb = getCurrentLightbox()
     if(lb && lb.options && lb.options.onClose) lb.options.onClose()
+}
+
+function loadHelpLightbox(id){
+    loadLightbox(id, {
+        backClose: true
+    })
 }
 
 closeButton(lightbox.parentNode, () => {
@@ -421,6 +428,5 @@ const PROJECT_DELETE_MSG = "Êtes-vous sûr de vouloir supprimer le projet \"<b>
 //#endregion
 
 setTimeout(() => {
-    goHome()
-    // navigateTo("projectpage", {projectId: 69})
+    navigateTo("projectpage", {projectId: 69})
 }, 10)

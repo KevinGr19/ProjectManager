@@ -15,6 +15,7 @@
     </div>
 
     <div class="page" id="searchpage">
+        <img class="help" src="assets/img/help.png" onclick="loadHelpLightbox('help-searchpage')">
         <h1 class="title">Projets</h1>
         <div class="searchbar">
             <div class="row c mgap spad">
@@ -37,6 +38,7 @@
     </div>
 
     <div class="page" id="projectpage">
+        <img class="help" src="assets/img/help.png" onclick="loadHelpLightbox('help-projectpage')">
         <h1 class="title"></h1>
         <article class="row c bgap">
             <div class="column sgap" style="width: 700px;">
@@ -320,6 +322,80 @@
 
     <div class="lightbox" id="image-detail">
         <img style="max-height: inherit; max-width: inherit;">
+    </div>
+
+    <div class="lightbox" id="help-searchpage">
+        <div class="column bmar sgap" style="max-width: 800px;">
+            <h2>Aide</h2>
+            <h3>Recherche</h3>
+            <p>La page de recherche vous permet de voir l'ensemble de vos projets. 
+                Vous pouvez filtrer les résultats avec des <b>mots-clés</b>, à taper dans la <b>barre de recherche</b>, ou bien avec des <b>étiquettes</b>.</p>
+
+            <br>
+            <h3>Etiquettes</h3>
+            <p>Les étiquettes vous permettent de trier vos projets. Elles sont constituées d'un label et d'une couleur.</p>
+            <p>Pour créer une étiquette sur la page de recherche, faites un <b>clic-droit</b> sur l'en-tête de la <b>barre d'étiquettes</b>.</p>
+            <div class="row c">
+                <img class="contrast" src="assets/img/help/barre-etiquettes-cm.png" alt="">
+            </div>
+
+            <p>Pour modifier ou supprimer une étiquette, faites un <b>clic-droit</b> dessus.</p>
+            <div class="row c">
+                <img class="contrast" src="assets/img/help/etiquette-cm.png" alt="">
+            </div>
+        </div>
+    </div>
+
+    <div class="lightbox" id="help-projectpage">
+        <div class="column bmar sgap" style="max-width: 800px;">
+            <h2>Aide</h2>
+            <h3>Modification</h3>
+            <p>Deux niveaux de modification sont présents dans le projet. Vous pouvez les distinguer à partir des boutons en bas à droite :</p>
+            <ul style="margin-left: 2em;">
+                <li>
+                    <p><b>Projet</b> : Permet de modifier toutes les données du projet (titre, description, images, notes...)</p>
+                    <br>
+                    <div class="row c">
+                        <img class="contrast" src="assets/img/help/modif-proj.png" alt="">
+                    </div>
+                </li>
+                <br>
+                <li>
+                    <p><b>États de tâches</b> : Permet uniquement de cocher/décocher l'accomplissement des tâches.</p>
+                    <br>
+                    <div class="row c">
+                        <img class="contrast" src="assets/img/help/modif-taches-proj.png" alt="">
+                    </div>
+                </li>
+            </ul>
+            
+            <br>
+            <h3>Etiquettes</h3>
+            <p>Les étiquettes vous permettent de trier vos projets. Elles sont constituées d'un label et d'une couleur.</p>
+            <p>Pour modifier ou supprimer une étiquette, faites un <b>clic-droit</b> dessus.</p>
+            <div class="row c">
+                <img class="contrast" src="assets/img/help/etiquette-cm-proj.png" alt="">
+            </div>
+            <p>Pour ajouter ou retirer une étiquette à votre projet, allez dans l'onglet <b>Gérer les étiquettes</b>, puis <b>cliquez</b> sur une étiquette pour la faire changer de côté.</p>
+            <div class="row c">
+                <img class="contrast" src="assets/img/help/etiquettes-proj.png" alt="" style="max-width: 700px;">
+            </div>
+
+            <br>
+            <h3>Ordre des tâches</h3>
+            <p>Il est possible de changer l'ordre de vos tâches. Pour cela, maintenez le <b>clic enfoncé</b> sur la tâche, puis <b>déplacez</b> la où vous souhaitez qu'elle soit.</p>
+
+            <br>
+            <h3>Suppression d'éléments</h3>
+            <p>Pour supprimer une tâche, une note ou une image, faites un <b>clic-droit</b> dessus, puis cliquez sur <b>Supprimer</b>. 
+                N'oubliez pas de sauvegarder les changements.</p>
+            <div class="row c mgap wrap">
+                <img src="assets/img/help/suppr-tache.png" alt="">
+                <img src="assets/img/help/suppr-notes.png" alt="">
+                <img src="assets/img/help/suppr-image.png" alt="">
+            </div>
+            <p>Vous pouvez également <b>annuler la suppression</b> des tâches et des notes en refaisant la même chose. Pour les images, <b>annulez</b> les changements du projet avec les boutons en bas à droite.</p>
+        </div>
     </div>
 
     <div id="contextmenu" class="popup hide">

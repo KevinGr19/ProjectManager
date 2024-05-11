@@ -391,6 +391,7 @@ page_loads["projectpage"] = (args) => {
             this.project.notes.push(newNote)
 
             let noteVM = this.addNote(newNote)
+            noteVM.root.classList.add('added')
 
             this.updateNoteVisuals()
             return newNote
