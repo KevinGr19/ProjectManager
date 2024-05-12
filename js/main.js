@@ -428,5 +428,5 @@ const PROJECT_DELETE_MSG = "Êtes-vous sûr de vouloir supprimer le projet \"<b>
 //#endregion
 
 setTimeout(() => {
-    navigateTo("projectpage", {projectId: 69})
+    goHome()
 }, 10)
